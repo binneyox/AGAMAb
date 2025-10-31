@@ -114,7 +114,6 @@ namespace actions {
 			const PtrToyMap _ptrTM, double _E, bool _negJr, bool _negJz,
 			const PerturbingHamiltonian& _pH) :
 			Torus(_J, _freqs, _GF, _ptrTM, _E, _negJr, _negJz), pH(_pH) {
-			//printf("eTorus created: %d terms in pH\n", pH.numTerms());
 		}
 		eTorus(const Torus& T, const PerturbingHamiltonian& _pH) :
 			Torus(T), pH(_pH) {
@@ -127,12 +126,6 @@ namespace actions {
 			return pH.get_hn(Indx, multiples);
 		}
 	};
-
-	//interpolate between 2 tori
-	EXP eTorus interpeTorus(const double x, const eTorus& T0, const eTorus& T1);
-
-	//interpolate on an indexed array of tori 
-	EXP eTorus interpeTorus(const double x, std::vector<double>&, std::vector<eTorus>&);
 
 	/*
 	 * Class for fitting torus to an orbit
@@ -182,7 +175,7 @@ namespace actions {
 		 * dispersion in H < tol*freqScale*Jtotal */
 		TorusGenerator(const potential::BasePotential& _pot,
 			const double _tol = 1e-9, std::string _logfname = "TG.log");
-		PtrToyMap chooseTM(GenFncFitSeries&, std::vector<double>&, const Actions&,
+		PtrToyMap chooseTM(GenFncFit&, std::vector<double>&, const Actions&,
 			double&, double&, double&, ToyPotType ToyMapType=ToyPotType::None, FILE* logfile = NULL) const;
 		Torus fitTorus(const Actions& J, const double tighten = 1, const ToyPotType ToyMapType=ToyPotType::None) const;
 		/* Fit a torus with all Sn=0 */
@@ -200,24 +193,28 @@ namespace actions {
 		void test_it(const Actions&, std::vector<double>&);
 		std::vector<Torus> constE(const double Jrmin, const Actions& Jstart, const int Nstep);
 		void old_getHn(const Torus&, int);
-	};
-	//interpolate between 2 tori
-	EXP Torus interpTorus(const double x, const Torus& T0, const Torus& T1, const TorusGenerator *TG=NULL);
+		//interpolate between 2 tori
+		Torus interpTorus(const double x, const Torus& T0, const Torus& T1) const;
+		//interpolae on an indexed array of tori 
+		Torus interpTorus(const double x, const std::vector<double>&, const std::vector<Torus>&) const;
+		//interpolate between 2 tori
+		eTorus interpeTorus(const double x, const eTorus& T0, const eTorus& T1) const;
+		//interpolate on an indexed array of tori 
+		eTorus interpeTorus(const double x, const std::vector<double>&, const std::vector<eTorus>&) const;
 
-	//interpolae on an indexed array of tori 
-	EXP Torus interpTorus(const double x, std::vector<double>&, std::vector<Torus>&, const TorusGenerator *TG);
+	};
 
 	class EXP TorusGrid1 {
 	private:
 		const std::vector<double>& xs;
 		const::std::vector<Torus> &Ts;
 		const int nx;
-		const TorusGenerator *TG;
+		const TorusGenerator& TG;
 		int botX(const double) const;
 	public:
 		TorusGrid1(std::vector<double>& _xs,
-			std::vector<actions::Torus> &_Ts, const TorusGenerator *_TG=NULL) :
-			xs(_xs), Ts(_Ts), nx(xs.size()),TG(_TG) {
+			std::vector<actions::Torus> &_Ts, const TorusGenerator& _TG) :
+			xs(_xs), Ts(_Ts), nx(xs.size()), TG(_TG) {
 		}
 		Torus T(const double x) const;
 	};
@@ -226,7 +223,7 @@ namespace actions {
 		const std::vector<double>& xs, ys, zs;
 		const std::vector<Torus>& Ts;
 		const int nx, ny, nz;
-		const TorusGenerator *TG;
+		const TorusGenerator& TG;
 		int botX(const double) const;
 		int botY(const double) const;
 		int botZ(const double) const;
@@ -235,8 +232,8 @@ namespace actions {
 		}
 	public:
 		TorusGrid3(std::vector<double>& _xs, std::vector<double>& _ys,
-			std::vector<double>& _zs, std::vector<actions::Torus>& _Ts, const TorusGenerator *_TG=NULL) :
-			xs(_xs), ys(_ys), zs(_zs), Ts(_Ts), nx(xs.size()), ny(ys.size()), nz(zs.size()),TG(_TG) {
+			std::vector<double>& _zs, std::vector<actions::Torus>& _Ts, const TorusGenerator& _TG) :
+			xs(_xs), ys(_ys), zs(_zs), Ts(_Ts), nx(xs.size()), ny(ys.size()), nz(zs.size()), TG(_TG) {
 		}
 		Torus T(const double x, const double y, const double z) const;
 		Torus T(const Actions J) const {
@@ -278,7 +275,5 @@ namespace actions {
 				std::vector<double>& gridE,
 				std::vector<double>& gridJr,
 				std::vector<double>& gridJz);
-	//EXP void mapJcrit(const potential::BasePotential& pot,
-	//		  math::CubicSpline& Jrcrit, math::CubicSpline& Jzcrit);
 	EXP std::vector<double> mapJcrit(const potential::BasePotential& pot);
 }//namespace actions

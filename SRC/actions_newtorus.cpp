@@ -13,12 +13,6 @@ namespace actions {
 
 		double NANfrac, NANbar;
 
-/*		struct PVUVSph {
-			double u, v, phi, pu, pv, pphi;
-		};
-		struct DerivActUVSph {
-			PVUVSph dbyJr, dbyJz, dbyJphi;
-		};*/
 		//Two functions used in containsPoint
 		double angleDiff(Angles A1, Angles A2) {
 
@@ -631,14 +625,14 @@ namespace actions {
 			const Actions& J;
 			const potential::BasePotential& pot;
 			const double freqScale;
-			GenFncFitSeries& GFFS;
+			GenFncFit& GFFS;
 			const PtrToyMap ptrTM;
 			int N1;
 		public:
 			torusFitter(const Actions& _J,
 				const potential::BasePotential& _pot,
 				const double _freqScale,
-				const PtrToyMap _ptrTM, GenFncFitSeries& _GFFS) :
+				const PtrToyMap _ptrTM, GenFncFit& _GFFS) :
 				J(_J), pot(_pot), freqScale(1000 * _freqScale), GFFS(_GFFS), ptrTM(_ptrTM){
 				N1 = GFFS.numParams();
 			}
@@ -1088,9 +1082,9 @@ namespace actions {
 
 
 	}//internal
-//	std::vector<double> trivXs = { 0,.5 * M_PI };
+
 	//interpolate between 2 tori
-	EXP Torus interpTorus(const double x, const Torus& T0, const Torus& T1, const TorusGenerator *TG) {
+	EXP Torus TorusGenerator::interpTorus(const double x, const Torus& T0, const Torus& T1) const{
 		if (x == 1) return T0;
 		if (x == 0) return T1;
 		const double xp = 1 - x;
@@ -1098,17 +1092,20 @@ namespace actions {
 		Frequencies freqs = T0.freqs * x + T1.freqs * xp;
 		Torus T0n=T0;
 		Torus T1n=T1;
-		if(T0.ptrTM->getToyMapType()!=T1.ptrTM->getToyMapType()||T0.ptrTM->getToyMapType()==ToyPotType::None){
-			if(TG){
-				if(T0.ptrTM->getToyMapType()!=ToyPotType::HO){
-					T0n=TG->fitTorus(T0.J,1,ToyPotType::HO);
-				}
-				if(T1.ptrTM->getToyMapType()!=ToyPotType::HO){
-					T1n=TG->fitTorus(T1.J,1,ToyPotType::HO);
-				}
-				GenFnc newGF(interpGenFnc(x, T0.GF, T1.GF));
+		if(T0.ptrTM->getToyMapType() != T1.ptrTM->getToyMapType() ||
+		   T0.ptrTM->getToyMapType() == ToyPotType::None){
+			printf("Different map types\n");
+			if(T0.ptrTM->getToyMapType() != ToyPotType::HO){
+				printf("fitting HO to T0\n"); 
+				T0n = fitTorus(T0.J,1,ToyPotType::HO);
 			}
-		}
+			if(T1.ptrTM->getToyMapType() != ToyPotType::HO){
+				printf("fitting HO to T0\n"); 
+				T1n = fitTorus(T1.J,1,ToyPotType::HO);
+			}
+			GenFnc newGF(interpGenFnc(x, T0.GF, T1.GF));
+		} else
+			printf("same map types\n");
 		GenFnc newGF(interpGenFnc(x, T0n.GF, T1n.GF));
 		PtrToyMap newptrTM(interpPtrToyMap(x, T0n.ptrTM, T1n.ptrTM));
 		double newE = T0n.E * x + T1n.E * xp;
@@ -1116,10 +1113,11 @@ namespace actions {
 		bool negJz = T0n.negJz || T1n.negJz;
 		return Torus(J, freqs, newGF, newptrTM, newE, negJr, negJz);
 	}
-	EXP Torus interpTorus(const double x, std::vector<double>& xs, std::vector<Torus>& Tgrid, const TorusGenerator *TG) {
+	EXP Torus TorusGenerator::interpTorus(const double x, const std::vector<double>& xs,
+					      const std::vector<Torus>& Tgrid) const{
 		int bot, top;
 		double f = bot_top(x, xs, bot, top);
-		return interpTorus(f, Tgrid[bot], Tgrid[top],TG);
+		return interpTorus(f, Tgrid[bot], Tgrid[top]);
 	}
 	int TorusGrid1::botX(const double x) const {
 		double bot = 0, top = nx - 1;
@@ -1135,8 +1133,8 @@ namespace actions {
 		if (x < xs.front()) botx = 0;
 		else if (x > xs.back()) botx = nx - 2;
 		else botx = botX(x);
-		double fx = (x - xs[botx]) / (xs[botx + 1] - xs[botx]);
-		return interpTorus(fx, Ts[botx], Ts[botx + 1],TG);
+		const double fx = (x - xs[botx]) / (xs[botx + 1] - xs[botx]);
+		return TG.interpTorus(fx, Ts[botx], Ts[botx + 1]);
 	}
 
 	int TorusGrid3::botX(const double x) const {
@@ -1177,13 +1175,13 @@ namespace actions {
 		double fx = (x - xs[botx]) / (xs[botx + 1] - xs[botx]);
 		double fy = (y - ys[boty]) / (ys[boty + 1] - ys[boty]);
 		double fz = (z - zs[botz]) / (zs[botz + 1] - zs[botz]);
-		Torus T1(interpTorus(fx, Tn(botx, boty, botz), Tn(botx + 1, boty, botz),TG));
-		Torus T2(interpTorus(fx, Tn(botx, boty + 1, botz), Tn(botx + 1, boty + 1, botz),TG));
-		Torus T3(interpTorus(fx, Tn(botx, boty, botz + 1), Tn(botx + 1, boty, botz + 1),TG));
-		Torus T4(interpTorus(fx, Tn(botx, boty + 1, botz + 1), Tn(botx + 1, boty + 1, botz + 1),TG));
-		Torus T5(interpTorus(fy, T1, T2,TG));
-		Torus T6(interpTorus(fy, T3, T4,TG));
-		return interpTorus(fz, T5, T6,TG);
+		Torus T1(TG.interpTorus(fx, Tn(botx, boty, botz), Tn(botx + 1, boty, botz)));
+		Torus T2(TG.interpTorus(fx, Tn(botx, boty + 1, botz), Tn(botx + 1, boty + 1, botz)));
+		Torus T3(TG.interpTorus(fx, Tn(botx, boty, botz + 1), Tn(botx + 1, boty, botz + 1)));
+		Torus T4(TG.interpTorus(fx, Tn(botx, boty + 1, botz + 1), Tn(botx + 1, boty + 1, botz + 1)));
+		Torus T5(TG.interpTorus(fy, T1, T2));
+		Torus T6(TG.interpTorus(fy, T3, T4));
+		return TG.interpTorus(fz, T5, T6);
 	}
 	EXP PerturbingHamiltonian interpPerturbingHamiltonian(double x,
 		const PerturbingHamiltonian& H0, const PerturbingHamiltonian& H1) {
@@ -1215,17 +1213,17 @@ namespace actions {
 		return H;
 	}
 
-	EXP eTorus interpeTorus(const double x, const eTorus& eT0, const eTorus& eT1,const TorusGenerator *TG) {
+	EXP eTorus TorusGenerator::interpeTorus(const double x, const eTorus& eT0, const eTorus& eT1) const{
 		if (x == 1) return eT0;
 		if (x == 0) return eT1;
-		return eTorus(interpTorus(x, Torus(eT0), Torus(eT1),TG),
+		return eTorus(interpTorus(x, Torus(eT0), Torus(eT1)),
 			interpPerturbingHamiltonian(x, eT0.pH, eT1.pH));
 	}
-	EXP eTorus interpeTorus(const double x, std::vector<double>& xs,
-		std::vector<eTorus>& Tgrid, const TorusGenerator *TG) {
+	EXP eTorus TorusGenerator::interpeTorus(const double x, const std::vector<double>& xs,
+		const std::vector<eTorus>& Tgrid) const{
 		int bot, top;
 		double f = bot_top(x, xs, bot, top);
-		return interpeTorus(f, Tgrid[bot], Tgrid[top],TG);
+		return interpeTorus(f, Tgrid[bot], Tgrid[top]);
 	}
 
 	coord::PosMomCyl Torus::from_toy(const Angles& thetaT) const {
@@ -1446,7 +1444,6 @@ namespace actions {
 		coord::PosMomCyl peri(from_true(Angles(0, .5 * M_PI, 0))), apo(from_true(Angles(M_PI, 0, 0))),
 			top(from_true(Angles(M_PI, .5 * M_PI, 0)));
 		double Rmin = .95 * peri.R, Rmax = 1.05 * apo.R, zmax = 1.05 * fabs(top.z);
-		//printf("Rperi etc %f %f %f\n", peri.R, apo.R, top.z);
 		if (p.R<Rmin || p.R>Rmax || fabs(p.z) > zmax) return false;
 		locFinder LF(*this, p);
 		double tolerance = 1e-8;
@@ -1454,19 +1451,18 @@ namespace actions {
 		int maxNumIter = 200;
 		coord::PosMomCyl P1; Angles A1, Atrue;
 		DerivAngCyl dA;
-		int kmax = 30, nfail = 0;
+		int kmax = 60, nfail = 0;
 		while (As.size() < 4 && nfail < kmax) {
 			double kount = 0, distsq;
 			for (int k = 0; k < kmax; k++) {
 				int ntry = math::nonlinearMultiFit(LF, params, tolerance, maxNumIter, result, &distsq);
-				//printf("(%d %zd %g)", ntry, As.size(), distsq);
 				if (sqrt(distsq) < 2 * tol) {
 					A1 = Angles(math::wrapAngle(result[0]), math::wrapAngle(result[1]), 0.0);
 					P1 = from_toy(A1);
 					A1.thetaphi += p.phi - P1.phi;
 					Atrue = GF.trueA(A1);
 					if (is_new(Atrue, As)) break;
-				}else nfail++;
+				} else nfail++;
 				params[0] += .3; params[0] = math::wrapAngle(params[0]);
 				params[1] += .7; params[1] = math::wrapAngle(params[1]);
 				kount++;
@@ -1501,7 +1497,6 @@ namespace actions {
 	double Torus::density(const coord::PosCyl& Rz) const {
 		std::vector<Angles> As; std::vector<coord::VelCyl> Vs;
 		std::vector<double> Jacobs;
-		//const double tol = 1e-6;
 		if (!containsPoint(Rz, As, Vs, Jacobs)) return 0;
 		double rho = 0;
 		for (int i = 0; i < As.size(); i++)
@@ -1743,53 +1738,53 @@ namespace actions {
 		}
 		fclose(ofile);
 	}
-	PtrToyMap TorusGenerator::chooseTM(GenFncFitSeries& GFFS0, std::vector<double>& params,
-		const Actions& J, double& Jscale,
-		double& freqScale, double& Rsh, ToyPotType ToyMapType, FILE* logfile) const {
+	PtrToyMap TorusGenerator::chooseTM(GenFncFit& GFFS0,
+					   std::vector<double>& params,
+					   const Actions& J, double& Jscale,
+					   double& freqScale, double& Rsh,
+					   ToyPotType ToyMapType, FILE* logfile) const {
 		const double L = fabs(J.Jphi) + J.Jz, Xi = J.Jz / L;
 		const double Jtot = L + J.Jr;
 		Jscale = J.Jr + J.Jz;
-		double Delta = interpD.value(L, Xi);// Delta *= exp(-3 * J.Jr / J.Jz);
-		double fac = (J.Jz==0)?0:exp(-pow(J.Jr / J.Jz, 1.5));//fac -> 1 for shell
 		Rsh = interpR.value(L, Xi);
-		double Jtot1 = J.Jr + fabs(J.Jphi),
-		Lrel = fabs(J.Jphi)/Jtot1,
-		logJ = log(Jtot1),
-		scaledE = interpJrE.value(logJ, Lrel);
-		double E1=unscaleE(scaledE, invPhi0);
-		double E2=potential::E_circ(pot,L);
-		double E=fac*E2+(1-fac)*E1;
+		double Delta = interpD.value(L, Xi);
+		double Jtot1 = J.Jr + fabs(J.Jphi), Lrel = fabs(J.Jphi)/Jtot1;
+		double scaledE = interpJrE.value(log(Jtot1), Lrel);
+		double E1=unscaleE(scaledE, invPhi0), E2=potential::E_circ(pot,L);
+		double fac = (J.Jz==0)? 0 : exp(-pow(J.Jr / J.Jz, 1.5));//fac -> 1 for shell
+		double E = fac*E2 + (1-fac)*E1;
+		double Phi0; coord::HessCyl d2Phi;
+		pot.eval(coord::PosCyl(0, 0, 0), &Phi0, NULL, &d2Phi);
+		if (!std::isnan(Phi0) && ToyMapType == ToyPotType::None) {
+			double wv2 = 2 * (E-Phi0) + pow_2(J.Jphi / Delta);
+			if (!std::isnan(d2Phi.dz2) && d2Phi.dz2 > 0)
+				wv2 += d2Phi.dz2 * pow_2(Delta);
+			double Jcr = sqrt(wv2) * Delta, k = 0.3;
+			double Jphilow = k * Jcr;
+			if (J.Jphi < Jphilow) {
+				if (J.Jr == 0) ToyMapType = ToyPotType::Is;
+				else {
+					double Jzcrit = interpJz(J.Jr);
+					ToyMapType = J.Jz>Jzcrit? ToyPotType::Is :
+						ToyPotType::HO;
+					if (logfile) {
+						if (ToyMapType == ToyPotType::Is)
+							fprintf(logfile, "Using Isochrone\n");
+						else fprintf(logfile, "Using Harmonic Oscillator\n");
+						fprintf(logfile, "box loop orbit transition at this Jr is Jz(Jr)=%f\n", Jzcrit);
+					if (fabs(Jzcrit - J.Jz) < 0.2 * Jzcrit)
+						fprintf(logfile, "warning:very close to box loop orbit transition. This will lead to inaccurate results\n");
+					}
+				}
+			}
+		}
+		if(ToyMapType==ToyPotType::None) ToyMapType=ToyPotType::Is;
 		double Rmin, Rmax;
 		potential::findPlanarOrbitExtent(pot, E1, J.Jphi, Rmin, Rmax);
 		freqScale = potential::v_circ(pot, Rsh) / Rsh; //frequency scale set
 		int Nn = 5;
 		int Nnr = 5;
 		double tolerance = 1e-9;//controls optimisation
-		double Phi0;coord::HessCyl d2Phi;
-		pot.eval(coord::PosCyl(0, 0, 0), &Phi0, NULL, &d2Phi);
-		if (!std::isnan(Phi0)&&ToyMapType==ToyPotType::None) {
-			double wv2 =2 * (E-Phi0) + pow_2(J.Jphi / Delta);
-			if (!std::isnan(d2Phi.dz2) && d2Phi.dz2 > 0)wv2 += d2Phi.dz2 * pow_2(Delta);
-			double Jcr = sqrt(wv2) * Delta;
-			double k = 0.3;
-			double Jphilow = k * Jcr;
-			if (J.Jphi < Jphilow) {
-				if (J.Jr == 0) ToyMapType = ToyPotType::Is;
-				else {
-					double Jzcrit = interpJz(J.Jr);
-					if (J.Jz > Jzcrit) ToyMapType = ToyPotType::Is;
-					else ToyMapType = ToyPotType::HO;
-					if (logfile) {
-						if (ToyMapType == ToyPotType::Is)fprintf(logfile, "Using Isochrone\n");
-						else fprintf(logfile, "Using Harmonic Oscillator\n");
-						fprintf(logfile, "box loop orbit transition at this Jr is Jz(Jr)=%f\n", Jzcrit);
-					}
-					if (logfile && fabs(Jzcrit - J.Jz) < 0.2 * Jzcrit)
-						fprintf(logfile, "warning:very close to box loop orbit transition. This will lead to inaccurate results\n");
-				}
-			}
-		}
-		if(ToyMapType==ToyPotType::None)ToyMapType=ToyPotType::Is;
 		PtrToyMap TM;
 		if (ToyMapType == ToyPotType::Is) {
 			//Now choose isochrone
@@ -1828,8 +1823,7 @@ namespace actions {
 			math::ScalingInfTh sc(Rs);
 			PTIso PT(Delta,sc,p,pr);
 			TM=PtrToyMap(new ToyMapIso(Is,PT));
-		}
-		else {
+		} else {
 			// Here we choose HO
 			double Rs = 2*(Rmax * (1 - fac) + fac * Rsh);
 			//double z1 = sqrt(pow_2(Rsh) + pow_2(Delta));
@@ -1862,17 +1856,15 @@ namespace actions {
 	Torus TorusGenerator::giveBaseTorus(const Actions& J, const PtrToyMap& ptrTM) const {
 		std::vector<double> params;
 		int nrmax = 0, nzmax = 0;// nzmax must be even
-        double Hbar;
+		double Hbar;
 		GenFncIndices indices = makeGridIndices(nrmax, nzmax);
-		GenFncFitFracs fracs;
-		GenFncFitSeries GFFS(indices, 8, 6, fracs, J);
+		GenFncFit GFFS(indices, 8, 6, J);
 		torusFitter TF(J, pot, 1, ptrTM, GFFS);
 		Frequencies freqs;
 		GenFncDerivs dPdJ;
 		bool negJr, negJz;
 		TF.fitAngleMap(&params[0], Hbar, freqs, dPdJ, negJr, negJz);
-		GenFncFracs Fracs;
-		GenFnc G(indices, params, dPdJ, Fracs);
+		GenFnc G(indices, params, dPdJ);
 		return Torus(J, freqs, G, ptrTM, Hbar, negJr, negJz);
 	}
 
@@ -1882,30 +1874,29 @@ namespace actions {
 		int nrmax = 6, nzmax = 4;// nzmax must be even
 		GenFncIndices indices = makeGridIndices(nrmax, nzmax);
 		std::vector<double> params(indices.size(), 0);
-		GenFncFitFracs fracs;
 		int timesr = 8, timesz = 8;
-		GenFncFitSeries GFFS0(indices, timesr, timesz, fracs, J);
+		GenFncFit GFFS0(indices, timesr, timesz, J);
 		double Jscale, freqScale, Rsh;
-		PtrToyMap ptrTM(chooseTM(GFFS0, params, J, Jscale, freqScale, Rsh, ToyMapType, logfile));
+		PtrToyMap ptrTM(chooseTM(GFFS0, params, J, Jscale, freqScale, Rsh,
+					 ToyMapType, logfile));
 		double tolerance = 1e-9;//controls optimisation of the given Sn
 		double tol = defaultTol * tighten;
 		double Hbar, Hdisp = 1e20, Htarget = tol * freqScale * Jscale;
 		bool converged = false;
 		int Loop = 0, MaxLoop = 12, maxNumIter = 10;
-		bool usefracs = false;//TM.useIso;
 		std::vector<double> rep;
 		do {
 			double Hdisp_old = Hdisp;
 			int numTerms_old = GFFS0.numTerms();
-			GenFncFitSeries GFFS(indices, timesr, timesz, fracs, J);
+			GenFncFit GFFS(indices, timesr, timesz, J);
 			torusFitter TF(J, pot, freqScale, ptrTM, GFFS);
 			if (std::isnan(Hdisp)) exit(0);
 			try {
 				NANbar = 0;
 				int numIter = math::nonlinearMultiFit(TF, &params[0], tolerance, maxNumIter, &params[0], &Hdisp);
 				Hdisp = sqrt(Hdisp);
-				fprintf(logfile, "%d terms %d fracs %d points -> dH %7.3e",
-					GFFS.numTerms(), GFFS.numFracs(), GFFS.numPoints(), Hdisp);
+				fprintf(logfile, "%d terms %d points -> dH %7.3e",
+					GFFS.numTerms(), GFFS.numPoints(), Hdisp);
 				rep.push_back(Hdisp);
 				if (NANfrac + NANbar > 0)
 					fprintf(logfile, " NANfrac %f NANbar %f\n", NANfrac, NANbar);
@@ -1920,24 +1911,23 @@ namespace actions {
 			if (converged || (Loop > 1 && stuck)) break;
 			if (GFFS.numTerms() > numTerms_old && Hdisp > Hdisp_old) {//something wrong: back up 
 				indices = GFFS0.indices;
-				fracs = GFFS0.fracs;
-				params.resize(indices.size()+2*fracs.size());
+				params.resize(indices.size());
 				Hdisp = Hdisp_old;
 				timesr += 4;
 				timesz += 3;
 			}
 			else {
 				GFFS0 = GFFS;
-				indices = GFFS.expand(params, fracs,usefracs);
+				indices = GFFS.expand(params);
 			}
 			Loop++;
 		} while (Loop < MaxLoop);
-		GenFncFitSeries GFFS(indices, timesr, timesz, fracs, J);
-		printf("Hdisp %e %d\n", Hdisp, Loop);
+		GenFncFit GFFS(indices, timesr, timesz, J);
+		printf("Hdisp %e after %d expansions\n", Hdisp, Loop);
 		if (!converged) {
 			fprintf(logfile, "\nfitTorus failed to converge: %7.3e vs %7.3e target. ",
 				Hdisp, Htarget);
-			fprintf(logfile, "%zd terms %zd fracs", indices.size(), fracs.size());
+			fprintf(logfile, "%zd terms", indices.size());
 			fprintf(logfile, "\nNANfracs: %f %f, resids:\n", NANfrac, NANbar);
 			for (int i = 0; i < rep.size(); i++) fprintf(logfile, "%7.2e ", rep[i]); printf("\n");
 		}
@@ -1946,12 +1936,8 @@ namespace actions {
 		GenFncDerivs dPdJ;
 		bool negJr,negJz;
 		Hdisp = TF.fitAngleMap(&params[0], Hbar, freqs, dPdJ,negJr,negJz);
-		GenFncFracs Fracs;
-		for (unsigned int j = 0; j < fracs.size(); j++)
-			Fracs.push_back(GenFncFrac(fracs[j],
-				&params[indices.size() + 2 * j], &dPdJ[indices.size() + 2 * j]));
 		params.resize(indices.size()); dPdJ.resize(indices.size());
-		GenFnc G(indices, params, dPdJ, Fracs);
+		GenFnc G(indices, params, dPdJ);
 		fclose(logfile);
 		return Torus(J, freqs, G, ptrTM, Hbar, negJr, negJz);
 	}
@@ -1962,8 +1948,7 @@ namespace actions {
 		int nrmax = 2, nzmax = 6;// nzmax must be even
 		GenFncIndices indices = makeGridIndices(nrmax, nzmax);
 		std::vector<double> params(indices.size(), 0);
-		GenFncFitFracs fracs;
-		GenFncFitSeries GFFS0(indices, 8, 6, fracs, J);
+		GenFncFit GFFS0(indices, 8, 6, J);
 		double Jscale, freqScale, Rsh;
 		PtrToyMap ptrTM(chooseTM(GFFS0, params, J, Jscale, freqScale, Rsh,ToyMapType));
 		fclose(logfile);
@@ -1973,21 +1958,13 @@ namespace actions {
 	Torus TorusGenerator::fitFrom(const Actions& J, const Torus& T, const double tighten) const {
 		GenFncIndices indices(T.GF.indices);
 		std::vector<double> params(T.GF.values);
-		GenFncFitFracs fracs;
-		for (int i = 0; i < T.GF.fracs.size(); i++) {
-			fracs.push_back(GenFncFitFrac(T.GF.fracs[i].mz, T.GF.fracs[i].mphi));
-			params.push_back(T.GF.fracs[i].B);
-			params.push_back(atanh(T.GF.fracs[i].b));
-		}
-		//double Jscale = J.Jr + J.Jz
-        double freqScale = T.freqs.Omegaz;
+		double freqScale = T.freqs.Omegaz;
 		PtrToyMap ptrTM(T.ptrTM);
 		double tolerance = 1e-9;//controls optimisation of the given Sn
 		double Hbar, Hdisp = 1e20;
 		int maxNumIter = 10;
-		//double tol = defaultTol * tighten;
 		std::vector<double> rep;
-		GenFncFitSeries GFF(indices, 8, 6, fracs, J);
+		GenFncFit GFF(indices, 8, 6, J);
 		torusFitter TF(J, pot, freqScale, ptrTM, GFF);
 		try {
 			int numIter = math::nonlinearMultiFit(TF, &params[0], tolerance, maxNumIter, &params[0], &Hdisp);
@@ -2001,12 +1978,8 @@ namespace actions {
 		GenFncDerivs dPdJ;
 		bool negJr, negJz;
 		Hdisp = TF.fitAngleMap(&params[0], Hbar, freqs, dPdJ, negJr, negJz);
-		GenFncFracs Fracs;
-		for (unsigned int j = 0; j < fracs.size(); j++)
-			Fracs.push_back(GenFncFrac(fracs[j],
-				&params[indices.size() + 2 * j], &dPdJ[indices.size() + 2 * j]));
-		params.resize(indices.size()); dPdJ.resize(indices.size());
-		GenFnc G(indices, params, dPdJ, Fracs);
+		if(negJr || negJz) printf("actions<0 in fitAngleMap: %d %d\n",negJr,negJz);
+		GenFnc G(indices, params, dPdJ);
 		return Torus(J, freqs, G, ptrTM, Hbar, negJr, negJz);
 	}
 	eTorus TorusGenerator::fiteTorus(const Actions& J, const double tighten,
@@ -2065,7 +2038,7 @@ namespace actions {
 		const double tol = 1e-5;
 		double phi0 = point.phi;
 		while (fabs(phi0) > M_PI) phi0 += phi0 > M_PI ? -M_PI : M_PI;
-		coord::PosMomCyl P0(point.R, point.z, phi0, point.vR, point.vz, point.vphi * point.R);
+		coord::PosMomCyl P0(coord::toPosMomCyl(point));
 		Angles trueA;
 		Actions J(AF->actions(point));
 		if (std::isnan(J.Jr) || std::isnan(J.Jz)) {
@@ -2074,21 +2047,24 @@ namespace actions {
 			exit(0);
 		}
 		T = TG.fitTorus(J);
-		PtrPointTransform PtrPT =T.ptrTM->getPointTrans();
+		PtrPointTransform PtrPT = T.ptrTM->getPointTrans();
 		std::vector<double> dJt_old;
-		int kount = 0;
 		ActionAngles aaT = T.ptrTM->pq2aa(P0);
-		Angles tT(aaT);
-		Actions JT(aaT);
-		double diff = 1e3;
+		Angles tT(aaT);	Actions JT(aaT);
+		printf("thetaT: %f %f %f\n",tT.thetar,tT.thetaz,tT.thetaphi);
+		double diff = 1e20;
+		int kount = 0;
 		while (kount < 10) {
-			if (kount > 0)
-				T = Torus(TG.fitFrom(J, T));
-			Actions JT1 = T.GF.toyJ(J, tT);
-			std::vector<double> df = { JT.Jr - JT1.Jr,JT.Jz - JT1.Jz,0.0 };
+			Torus T1 = kount>0? TG.fitFrom(J, T) : T;
+			Actions JT1 = T1.GF.toyJ(J, tT);
+			std::vector<double> df = {JT.Jr - JT1.Jr, JT.Jz - JT1.Jz, 0.0};
 			math::Matrix<double> dthetadthetaT(3, 3);
-			T.GF.dtbydtT_Jacobian(tT, dthetadthetaT);
-			math::Matrix<double> Mat3(3, 3);
+			T1.GF.dtbydtT_Jacobian(tT, dthetadthetaT);
+			for(int i=0; i<3; i++){
+				for(int j=0; j<3; j++)
+					printf("%g\t",dthetadthetaT(i,j));
+				printf("\n");
+			}
 			math::LUDecomp LUM(dthetadthetaT);
 			math::Matrix<double> inv = LUM.inverse(3);
 			std::vector<double> dJt(3, 0.0);
@@ -2096,17 +2072,16 @@ namespace actions {
 			double old_diff = diff;
 			diff = sqrt(pow_2(dJt[0]) + pow_2(dJt[1]));
 			if (diff >= old_diff) {//We've gone backwards!
-				J.Jr -= dJt_old[0]; J.Jz -= dJt_old[1];
+				J.Jr = T.J.Jr; J.Jz = T.J.Jz;
+				trueA = T.GF.trueA(tT); T=T1;
 				break;
 			}
+			T=T1;
 			dJt_old = dJt;
 			J.Jr += dJt[0]; J.Jz += dJt[1];
 			printf("kount:%d (%f,%f) %f\n", kount, J.Jr, J.Jz, diff);
-			if (sqrt(pow_2(dJt[0]) + pow_2(dJt[1])) < tol) {
-				if (kount > 0) {
-					trueA = T.GF.trueA(tT);
-					break;
-				}
+			if (diff < tol && kount>0) {
+				trueA = T.GF.trueA(tT);	break;
 			}
 			kount++;
 		}
@@ -2128,20 +2103,5 @@ namespace actions {
 			scaledJ[i]=scale(Sc,2*gridJr[i]+gridJz[i]);
 		return math::fitPoly(15,scaledJ,gridJz);
 	}
-/*
-	EXP math::CubicSpline mapJcrit(const potential::BasePotential& pot){
-		std::vector<double> gridR = potential::createInterpolationGrid(pot, ACCURACY_INTERP2);
-		const int n = gridR.size();
-		std::vector<double> gridE(n), gridJr(n), gridJz(n);
-		potential::Interpolator interp(pot);
-		for(int i=0; i<n; i++) gridE[i] = interp(gridR[i]);//returns value by evalDeriv
-		printf("mapJcrit calling createGridBoxLoop\n");
-		createGridBoxLoop(pot, gridE, gridJr, gridJz);
-		for(int i=0; i<n; i++){
-			pzf pzfunc(pot,gridE[i]);
-			gridJr[i] += gridJz[i];
-		}
-		return math::CubicSpline(gridJr, gridJz);
-	}
-*/
+
 }//namespace

@@ -605,7 +605,6 @@ class EXP FrequencyFinder{
 		const double deltat;// interval between input times
 		const double frqmin, frqmax;//lowest & highest frequencies to be saved
 		cmplx zl[4];//2nd difference of spectrum near current peak
-		std::vector<line> lines;//object returned by analyse()
 		double wmin,/*freq resolution*/ discrm;//angle difference considered insignificant
 		double pwr0,/*input power*/ pwr_best;
 		double sin0, cos0;//sin and cos pi/NF 

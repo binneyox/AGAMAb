@@ -34,7 +34,7 @@ double HernquistDF::value(const double E) const{
 	return f/factor;
 }
 
-double IsochroneDF::value(const double E) const{
+double IsochroneDF_E::value(const double E) const{
 	double cE = -E*scaleRadius/mass;
 	double sqE = sqrt(cE), cEp = 1-cE;
 	double f = sqE/pow_4(2*cEp)*(27-(66-(320-(240-64*cE)*cE)*cE)*cE

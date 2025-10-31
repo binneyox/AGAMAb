@@ -143,8 +143,15 @@ typedef shared_ptr<const PhaseVolume>   PtrPhaseVolume;
 namespace actions{
 
 class BaseActionFinder;
+class BasePointTransform;
+class BaseToyMap;
+
 /// shared pointer to an action finder object
 typedef shared_ptr<const BaseActionFinder> PtrActionFinder;
+/// shared pointer to a PointTransformation object
+typedef shared_ptr<const BasePointTransform> PtrPointTransform;
+/// shared pointer to a ToyMap object
+typedef shared_ptr<const BaseToyMap> PtrToyMap;
 
 }  // namespace actions
 

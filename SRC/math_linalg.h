@@ -45,8 +45,8 @@ struct EXP Triplet {
     double v;  ///< value
     Triplet() : i(0), j(0), v(0) {}
     Triplet(const int _i, const int _j, const double _v) : i(_i), j(_j), v(_v) {}
-    int row() const { return i; }
-    int col() const { return j; }
+    int row() const { return (int)i; }
+    int col() const { return (int)j; }
     double value() const { return v; }
 };
 

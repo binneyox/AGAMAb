@@ -75,7 +75,7 @@ class EXP PTIso: public BasePointTransform{
 			}
 		}
 		virtual int numParams() const{
-			if(N==0&&Nr==0)return 1;
+			if(N==0 && Nr==0)return 1;
 			return 2;
 		}
 		virtual int FourierSizer() const{return Nr;}
@@ -161,7 +161,7 @@ class EXP PTHarm : public BasePointTransform{
 		    PTIso PT;
 		    ToyMapIso(){}
 		    ToyMapIso(Isochrone _Is, PTIso _PT) : Is(_Is), PT(_PT){
-			//PtrPT=std::make_shared<const BasePointTransform>(_PT);
+			PtrPT=std::make_shared<const PTIso>(PT);
 		    };
 		    virtual Actions pq2J(const coord::PosMomCyl Rzp) const {
 			    return Is.pq2J(PT.revmapSph(Rzp));
@@ -216,7 +216,7 @@ class EXP PTHarm : public BasePointTransform{
 		PTHarm PT;
 		ToyMapHarm() {}
 		ToyMapHarm(HarmonicOscilattor _HOs, PTHarm _PT) : HOs(_HOs),PT(_PT){
-			//PtrPT=std::make_shared<const BasePointTransform>(_PT);
+			PtrPT=std::make_shared<const PTHarm>(PT);
 		}
 		Actions pq2J(const coord::PosMomCyl Rzp) const {
 			return HOs.pq2J(PT.revmap(Rzp));

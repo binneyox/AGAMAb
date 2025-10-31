@@ -27,11 +27,11 @@ class EXP HernquistDF: public ergodicDF {
 		    factor(sqrt(2)*pow_3(2*M_PI*sqrt(mass*scaleRadius))) {}
 		virtual double value(const double E) const;
 };
-class EXP IsochroneDF: public ergodicDF {
+class EXP IsochroneDF_E: public ergodicDF {
 	private:
 		const double mass, scaleRadius, factor;
 	public:
-		IsochroneDF(double _mass, double _scaleRadius):
+		IsochroneDF_E(double _mass, double _scaleRadius):
 		    mass(_mass), scaleRadius(_scaleRadius),
 		    factor(sqrt(2)*pow_3(2*M_PI*sqrt(mass*scaleRadius))) {}
 		virtual double value(const double E) const;

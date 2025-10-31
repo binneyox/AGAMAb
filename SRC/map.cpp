@@ -126,7 +126,6 @@ namespace actions{
             if (drdrn) {
                 double drndr;
                 double rn2=r2rn(r1, values, sc, &drndr);
-                printf("rn:%f %f\n",rn,rn2);
                 *drdrn = 1 / drndr;
             }
             return r1;
@@ -562,8 +561,6 @@ namespace actions{
 		double drdx, d2rdx2, drndx0, ddrndrdx0;
 		double r = r2rn(rp.R, paramsFr, sc, &drdx, &d2rdx2, dRzdP?&drndx0:NULL, 
             dRzdP?&ddrndrdx0:NULL, dRzdFr?&drndP[0]:NULL, dRzdFr?&ddrndrdP[0]:NULL);
-            printf("r:%f %f %f %d\n",r,rp.R,math::scale(sc,rp.R),paramsFr.size());
-        for(int i=0;i<paramsFr.size();i++)printf("pnew:%f\n",paramsFr[i]);
 		double pr = rp.pR / drdx;
 		double sq = pow_2(r) + cs.Delta2, rt = sqrt(sq);
 		double R = r * snt, z = rt * cst;
@@ -635,39 +632,39 @@ namespace actions{
 			if (PtrTM0->getToyMapType()==ToyPotType::Is){
 				Isochrone Is0(val1,val2);
 				Isochrone Is1(valn1,valn2);
-                PtrPointTransform PtrPT0=PtrTM0->getPointTrans();
-                PtrPointTransform PtrPT1=PtrTM1->getPointTrans();
-                double par0[2];
-                int Nr0=PtrPT0->FourierSizer(), Nz0=PtrPT0->FourierSizez();
-                std::vector<double> p0(Nz0),pr0(Nr0);
-                PtrPT0->getParams(par0,&pr0[0],&p0[0]);
-                math::ScalingInfTh sc0(par0[1]);
-                PTIso PTIs0(par0[0],sc0,p0,pr0);
-                double par1[2];
-                int Nr1=PtrPT1->FourierSizer(), Nz1=PtrPT1->FourierSizez();
-                std::vector<double> p1(Nz1),pr1(Nr1);
-                PtrPT1->getParams(par1,&pr1[0],&p1[0]);
-                math::ScalingInfTh sc1(par1[1]);
-                PTIso PTIs1(par1[0],sc1,p1,pr1);
+				PtrPointTransform PtrPT0 = PtrTM0->getPointTrans();
+				PtrPointTransform PtrPT1 = PtrTM1->getPointTrans();
+				int Nr0=PtrPT0->FourierSizer(), Nz0=PtrPT0->FourierSizez();
+				std::vector<double> p0(Nz0),pr0(Nr0);
+				double par0[2];
+				PtrPT0->getParams(par0,&pr0[0],&p0[0]);
+				math::ScalingInfTh sc0(par0[1]);
+				PTIso PTIs0(par0[0],sc0,p0,pr0);
+				double par1[2];
+				int Nr1=PtrPT1->FourierSizer(), Nz1=PtrPT1->FourierSizez();
+				std::vector<double> p1(Nz1),pr1(Nr1);
+				PtrPT1->getParams(par1,&pr1[0],&p1[0]);
+				math::ScalingInfTh sc1(par1[1]);
+				PTIso PTIs1(par1[0],sc1,p1,pr1);
 				return PtrToyMap(new ToyMapIso(interpIsochrone(x, Is0, Is1),interpPTIso(x,PTIs0,PTIs1)));
 			}
-            else if(PtrTM0->getToyMapType()==ToyPotType::HO){
+			else if(PtrTM0->getToyMapType()==ToyPotType::HO){
 				HarmonicOscilattor HOs0(val1,val2);
-			    HarmonicOscilattor HOs1(valn1,valn2);
-                PtrPointTransform PtrPT0=interpPointTrans(x,PtrTM0->getPointTrans(),PtrTM1->getPointTrans());
-                PtrPointTransform PtrPT1=PtrTM1->getPointTrans();
-                double par0[3];
-                int Nr0=PtrPT0->FourierSizer(), Nz0=PtrPT0->FourierSizez();
-                std::vector<double> p0(Nz0),pr0(Nr0);
-                PtrPT0->getParams(par0,&pr0[0],&p0[0]);
-                math::ScalingInfTh sc0(par0[1]), scz0(par0[2]);
-                PTHarm PTH0(par0[0],sc0,scz0,p0,pr0);
-                double par1[3];
-                int Nr1=PtrPT1->FourierSizer(), Nz1=PtrPT1->FourierSizez();
-                std::vector<double> p1(Nz1),pr1(Nr1);
-                PtrPT1->getParams(par1,&pr1[0],&p1[0]);
-                math::ScalingInfTh sc1(par1[1]), scz1(par1[2]);
-                PTHarm PTH1(par1[0],sc1,scz1,p1,pr1);
+				HarmonicOscilattor HOs1(valn1,valn2);
+				PtrPointTransform PtrPT0=interpPointTrans(x,PtrTM0->getPointTrans(),PtrTM1->getPointTrans());
+				PtrPointTransform PtrPT1=PtrTM1->getPointTrans();
+				double par0[3];
+				int Nr0=PtrPT0->FourierSizer(), Nz0=PtrPT0->FourierSizez();
+				std::vector<double> p0(Nz0),pr0(Nr0);
+				PtrPT0->getParams(par0,&pr0[0],&p0[0]);
+				math::ScalingInfTh sc0(par0[1]), scz0(par0[2]);
+				PTHarm PTH0(par0[0],sc0,scz0,p0,pr0);
+				double par1[3];
+				int Nr1=PtrPT1->FourierSizer(), Nz1=PtrPT1->FourierSizez();
+				std::vector<double> p1(Nz1),pr1(Nr1);
+				PtrPT1->getParams(par1,&pr1[0],&p1[0]);
+				math::ScalingInfTh sc1(par1[1]), scz1(par1[2]);
+				PTHarm PTH1(par1[0],sc1,scz1,p1,pr1);
 				return PtrToyMap(new ToyMapHarm(interpHarmonicOscillator(x, HOs0, HOs1),interpPTHarm(x,PTH0,PTH1)));
 			}
 		}

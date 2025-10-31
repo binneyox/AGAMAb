@@ -310,7 +310,7 @@ int nonlinearMultiFit(const IFunctionNdimDeriv& F, const double xinit[],
     gsl_vector* resids=solver->f;
     if(resid){
 	    *resid=0;
-	    for(int i=0;i<Ndata;i++) *resid+=pow_2(resids->data[i]);
+	    for(unsigned int i=0; i<Ndata; i++) *resid+=pow_2(resids->data[i]);
 	    *resid /= Ndata;
     }
     gsl_multifit_fdfsolver_free(solver);
@@ -478,7 +478,6 @@ EXP std::vector<double> fitPoly(const int N, const std::vector<double>& x,
 	std::vector<double> c;
 	double rms;
 	math::linearMultiFit(X,y,NULL,c,&rms);
-	printf("rms %g\n",rms);
 	return c;
 }
 EXP double evalPoly(const std::vector<double>& c, const double x){
