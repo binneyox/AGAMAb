@@ -169,7 +169,9 @@ class DFIntegrandNdim: public math::IFunctionNdim {
 				    bool valid = true;
 				    math::ScalingSemiInf Sc;
 				    if(isFinite(act.Jr + act.Jz + act.Jphi) && (act.Jr!=0 || act.Jz!=0)) {
-					    double Jzc = math::evalPoly(model.potential.cJcrit, scale(Sc,2*act.Jr + act.Jz));
+					  //double Jzc = math::evalPoly(model.potential.cJcrit, scale(Sc,2*act.Jr + act.Jz));
+					    double Jzc = model.potential.getJzcrit(2*act.Jr + act.Jz);
+//						    
 					    if(los){
 //						    double s = los->s0 + los->s(posvel);
 						    if(bright){//Compute abs mags
@@ -379,7 +381,7 @@ public:
     virtual void eval(const double vars[], double values[]) const
     {
 	    try{
-		    math::ScalingSemiInf Sc;
+		    //math::ScalingSemiInf Sc;
             double X = vars[0], Y = vars[1], W = 2*vars[2]-1, Z, jac;  // W is scaled Z:
             if(W<0) {
                 Z   = -exp(1/(1+W) + 1/W);
@@ -418,7 +420,8 @@ public:
 
             // 2. determine the actions
             actions::Actions act = model.actFinder.actions(posvel);
-	    double Jzc = math::evalPoly(model.potential.cJcrit, scale(Sc,2*act.Jr + act.Jz));
+//	    double Jzc = math::evalPoly(model.potential.cJcrit, scale(Sc,2*act.Jr + act.Jz));
+	    double Jzc = model.potential.getJzcrit(2*act.Jr + act.Jz);
             // 3. compute the value of distribution function times the jacobian
             // FIXME: in some cases the Fudge action finder may fail and produce
             // zero values of Jr,Jz instead of very large ones, which may lead to
@@ -754,7 +757,7 @@ class DF_LFIntegrandNdim: public math::IFunctionNdim {
 			    try{
 	    // 2. determine the actions
 				    actions::Actions act = model.actFinder.actions(posvel.first);
-				    math::ScalingSemiInf Sc;
+				    //math::ScalingSemiInf Sc;
 	    // 3. compute the value of distribution function times the jacobian
 	    // FIXME: in some cases the Fudge action finder may fail and produce
 	    // zero values of Jr,Jz instead of very large ones, which may lead to
@@ -762,7 +765,8 @@ class DF_LFIntegrandNdim: public math::IFunctionNdim {
 	    // entirely, but the real problem is with the action finder, not here.
 				    bool valid = true;
 				    if(isFinite(act.Jr + act.Jz + act.Jphi) && (act.Jr!=0 || act.Jz!=0)) {
-					    double Jzc = math::evalPoly(model.potential.cJcrit, scale(Sc,2*act.Jr + act.Jz));
+					    //double Jzc = math::evalPoly(model.potential.cJcrit, scale(Sc,2*act.Jr + act.Jz));
+					    double Jzc = model.potential.getJzcrit(2*act.Jr + act.Jz);
 					    if(bright){//proposed mag is apparent
 						    double s = los->s(posvel.first);
 						    double shift = 5*log10(100 * s);

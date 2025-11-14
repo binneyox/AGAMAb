@@ -37,12 +37,14 @@ extern const TrivialSelectionFunction trivialSF;
 struct EXP GalaxyModel{
 public:
     const potential::BasePotential&     potential;  ///< gravitational potential
-    const actions::BaseActionFinder&    actFinder;  ///< action finder for the given potential
+//	const potential::CompositePotential&     potential;  ///< gravitational potential
+	const actions::BaseActionFinder&    actFinder;  ///< action finder for the given potential
     const df::BaseDistributionFunction& distrFunc;  ///< distribution function expressed in terms of actions
 
     /** Create an instance of the galaxy model from the three ingredients */
     GalaxyModel(
-        const potential::BasePotential& pot,
+		const potential::BasePotential& pot,
+//		const potential::CompositePotential& pot,
         const actions::BaseActionFinder& af,
         const df::BaseDistributionFunction& df) :
 	potential(pot), actFinder(af), distrFunc(df) {}

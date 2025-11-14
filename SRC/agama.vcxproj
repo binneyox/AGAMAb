@@ -145,7 +145,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="actions_focal_distance_finder.cpp" />
     <ClCompile Include="actions_harmonicoscillator.cpp" />
     <ClCompile Include="actions_newgenfnc.cpp" />
     <ClCompile Include="actions_newisochrone.cpp" />
@@ -204,6 +203,7 @@
     <ClCompile Include="potential_factory.cpp" />
     <ClCompile Include="potential_ferrers.cpp" />
     <ClCompile Include="potential_galpot.cpp" />
+    <ClCompile Include="potential_interpolators.cpp" />
     <ClCompile Include="potential_king.cpp" />
     <ClCompile Include="potential_multipole.cpp" />
     <ClCompile Include="potential_perfect_ellipsoid.cpp" />
@@ -214,7 +214,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="actions_base.h" />
-    <ClInclude Include="actions_focal_distance_finder.h" />
     <ClInclude Include="actions_harmonicoscillator.h" />
     <ClInclude Include="actions_newgenfnc.h" />
     <ClInclude Include="actions_newisochrone.h" />
@@ -274,6 +273,7 @@
     <ClInclude Include="potential_factory.h" />
     <ClInclude Include="potential_ferrers.h" />
     <ClInclude Include="potential_galpot.h" />
+    <ClInclude Include="potential_interpolators.h" />
     <ClInclude Include="potential_king.h" />
     <ClInclude Include="potential_multipole.h" />
     <ClInclude Include="potential_perfect_ellipsoid.h" />

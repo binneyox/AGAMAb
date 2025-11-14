@@ -37,13 +37,6 @@ coord::SymmetryType CompositeDensity::symmetry() const {
 }
 
 
-CompositeCyl::CompositeCyl(const std::vector<PtrPotential>& _components) : 
-    BasePotentialCyl(), components(_components)
-{
-    if(_components.empty())
-        throw std::invalid_argument("List of potential components cannot be empty");
-}
-
 void CompositeCyl::evalCyl(const coord::PosCyl &pos,
     double* potential, coord::GradCyl* deriv, coord::HessCyl* deriv2) const
 {

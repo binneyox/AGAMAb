@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="actions_focal_distance_finder.cpp" />
     <ClCompile Include="actions_newgenfnc.cpp" />
     <ClCompile Include="actions_newisochrone.cpp" />
     <ClCompile Include="actions_newtorus.cpp" />
@@ -61,10 +60,10 @@
     <ClCompile Include="actions_harmonicoscillator.cpp" />
     <ClCompile Include="map.cpp" />
     <ClCompile Include="df_halo.cpp" />
+    <ClCompile Include="potential_interpolators.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="actions_base.h" />
-    <ClInclude Include="actions_focal_distance_finder.h" />
     <ClInclude Include="actions_newgenfnc.h" />
     <ClInclude Include="actions_newisochrone.h" />
     <ClInclude Include="actions_newtorus.h" />
@@ -132,5 +131,6 @@
     <ClInclude Include="utils_config.h" />
     <ClInclude Include="actions_harmonicoscillator.h" />
     <ClInclude Include="map.h" />
+    <ClInclude Include="potential_interpolators.h" />
   </ItemGroup>
 </Project>

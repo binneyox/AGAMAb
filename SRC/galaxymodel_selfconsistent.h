@@ -10,14 +10,14 @@ The density profile is computed from a distribution function (DF) by integrating
 it over velocities; in doing so, the transformation between position/velocity and
 action/angle variables (the latter are the arguments of DF) is provided by
 the action finder associated with the total potential.
-Not every component needs to be generated from a DF: it may present a static
+Not every component needs to be generated from a DF: some may represent a static
 density and/or potential profile.
 
 In the present implementation, the overall potential is assembled from the contributions
 of each component that provide a potential (not all of them need to do so),
 plus two more potential expansions (Multipole for spheroidal components and CylSpline for
 disk-like components) constructed from the sum of density profiles of all relevant components.
-The rationale is that the multipole expansion is obviously not efficient for strongly
+The rationale for the split that the multipole expansion is obviously not efficient for strongly
 flattened density profiles, but on the other hand, CylSpline is less suitable for extended
 envelopes and/or density cusps; so a combination of them suits the needs of both worlds.
 

@@ -130,7 +130,52 @@ public:
         return evalCyl(pos, potential, deriv, deriv2); }
     void eval(const coord::PosSph &pos,
         double* potential=NULL, coord::GradSph* deriv=NULL, coord::HessSph* deriv2=NULL) const {
-        return evalSph(pos, potential, deriv, deriv2); }
+	    return evalSph(pos, potential, deriv, deriv2); }
+    
+//Now a series of functions that are defined only for CompCyl
+    virtual void getRshDelta(const double, const double, double&, double&) const{
+	    printf("Error getRshDelta(L) not overloaded\n");
+    }
+    virtual void getRshDelta(const double, const double, const double,
+			     double&, double&) const{
+	    printf("Error getRshDelta(E) not overloaded\n");
+    }
+    virtual double getRsh(const double, const double) const{
+	    printf("Error getRsh(L) not overloaded\n");
+	    return 0;
+    }
+    virtual double getRsh(const double, const double, const double) const{
+	    printf("Error getRsh(E) not overloaded\n");
+	    return 0;
+    }
+    virtual double getDelta(const double, const double) const{
+	    printf("Error getDelta(L) not overloaded\n");
+	    return 0;
+    }
+    virtual double getDelta(const double, const double, const double) const{
+	    printf("Error getDelta(E) not overloaded\n");
+	    return 0;
+    }
+    virtual double getJzcrit(const double Jf) const{
+	    printf("Error getJzcrit not overloaded\n");
+	    return 0;
+    }
+    virtual void getBestDeltaI3(const double, const double,
+				double&, double&) const{
+	    printf("Error getBestDeltaI3 not overloaded\n");
+    }
+    virtual double getBestDelta(const double, const double) const{
+	    printf("Error getBestDelta not overloaded\n");
+	    return 0;
+    }
+    virtual double getI3(const double E, const double) const{
+	    printf("Error getI3 not overloaded\n");
+	    return 0;
+    }
+    std::pair<double,double> getXiChi(const double E,const double Xip, const double invPhi0) const{
+	    printf("Error getI3 not overloaded\n");
+	    return std::make_pair(0,0);
+    }
 
     /** Shorthand for evaluating the value of potential at a given point in any coordinate system */
     template<typename CoordT>
@@ -139,10 +184,6 @@ public:
         eval(point, &val);
         return val;
     }
-    std::vector<double> cJcrit;
-    virtual void setJzcrit(std::vector<double>& _cJcrit){
-	    cJcrit = _cJcrit;
-    };
 
 protected:
     /** evaluate potential and up to two its derivatives in cartesian coordinates;
@@ -163,6 +204,7 @@ protected:
     virtual double densityCar(const coord::PosCar &pos) const;
     virtual double densityCyl(const coord::PosCyl &pos) const;
     virtual double densitySph(const coord::PosSph &pos) const;
+    
 };  // class BasePotential
 
 ///@}

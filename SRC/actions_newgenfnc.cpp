@@ -44,7 +44,7 @@ namespace actions {
 		}
 
 		/// create grid in angles with size determined by the maximal Fourier harmonic in the indices array
-		static std::vector<Angles> makeGridAngles(const GenFncIndices& indices,
+/*		static std::vector<Angles> makeGridAngles(const GenFncIndices& indices,
 			const int timesr, const int timesz)
 		{
 			//	int maxmr=4, maxmz=4, maxmphi=0;
@@ -55,7 +55,23 @@ namespace actions {
 				maxmphi = std::max<int>(maxmphi, math::abs(indices[i].mphi));
 			}
 			maxmz /= 2;//because GF ~ sin(2*n*theta_z)
-			return makeGridAngles(maxmr > 0 ? timesr * (maxmr / 4 + 1) : 2, timesz * (maxmz / 4 + 1), maxmphi > 0 ? 6 * (maxmphi + 1) : 1);
+			return makeGridAngles(maxmr > 0 ? timesr * (maxmr / 4 + 1) : 2,
+					      timesz * (maxmz / 4 + 1),
+					      maxmphi > 0 ? 6 * (maxmphi + 1) : 1);
+		}*/
+		static std::vector<Angles> makeGridAngles(const GenFncIndices& indices,
+			const double timesr, const double timesz)
+		{
+			//	int maxmr=4, maxmz=4, maxmphi=0;
+			int maxmr = 0, maxmz = 0, maxmphi = 0;
+			for (unsigned int i = 0; i < indices.size(); i++) {
+				maxmr = std::max<int>(maxmr, math::abs(indices[i].mr));
+				maxmz = std::max<int>(maxmz, math::abs(indices[i].mz));
+				maxmphi = std::max<int>(maxmphi, math::abs(indices[i].mphi));
+			}
+			int nr=(int)(timesr*(double)(maxmr+1));
+			int nz=(int)(timesz*(double)(maxmz+1));
+			return makeGridAngles(nr, nz, maxmphi+1);
 		}
 
 		/** Helper class to be used in the iterative solution of a nonlinear system of equations
@@ -131,12 +147,6 @@ namespace actions {
 			fprintf(ofile, "%d %d %d %g %g %g %g\n",
 				indices[i].mr, indices[i].mz, indices[i].mphi,
 				values[i], derivs[i].Jr, derivs[i].Jz, derivs[i].Jphi);
-/*		for (int j = 0; j < fracs.size(); j++) {
-			fprintf(ofile, "%d %g %g\n", fracs[j].mz, fracs[j].B, fracs[j].b);
-			fprintf(ofile, "%g %g %g %g %g %g\n",
-				fracs[j].dBdJ.Jr, fracs[j].dBdJ.Jz, fracs[j].dBdJ.Jphi,
-				fracs[j].dpsidJ.Jr, fracs[j].dpsidJ.Jz, fracs[j].dpsidJ.Jphi);
-		}*/
 	}
 	void GenFnc::read(FILE* ifile) {
 		int nt, nf;
@@ -224,7 +234,8 @@ namespace actions {
 
 	// dtheta_i/dthetaT_j
 	double GenFnc::dtbydtT_Jacobian(const Angles& thetaT, math::Matrix<double>& M) const {
-		M(0, 0) = M(1, 1) = M(2, 2) = 1; M(0, 1) = M(0, 2) = M(1, 2) = M(1, 0) = M(2, 0) = M(2, 1) = 0;
+		M(0, 0) = M(1, 1) = M(2, 2) = 1;
+		M(0, 1) = M(0, 2) = M(1, 2) = M(1, 0) = M(2, 0) = M(2, 1) = 0;
 		for (unsigned int i = 0; i < indices.size(); i++) {
 			double cosT = cos(indices[i].mr * thetaT.thetar
 				+ indices[i].mz * thetaT.thetaz
@@ -301,9 +312,8 @@ namespace actions {
 		return GenFnc(indices, values, derivs/*, fracs*/);
 	}
 
-	GenFncFit::GenFncFit(const GenFncIndices& _indices, const int timesr,
-		const int timesz,
-		const Actions& _acts) :
+	GenFncFit::GenFncFit(const GenFncIndices& _indices, const double timesr,
+		const double timesz, const Actions& _acts) :
 		indices(_indices), acts(_acts)
 	{
 		angs = makeGridAngles(indices, timesr, timesz);

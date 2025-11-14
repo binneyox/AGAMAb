@@ -1,5 +1,6 @@
 #include "actions_staeckel.h"
 #include "potential_perfect_ellipsoid.h"
+#include "potential_interpolators.h"
 #include "math_core.h"
 #include "math_fit.h"
 #include "utils.h"
@@ -100,8 +101,7 @@ AxisymFunctionFudge findIntegralsOfMotionAxisymFudge(
 	const coord::ProlSph& coordsys)
 {
 	const coord::PosVelProlSph pprol = coord::toPosVel<coord::Cyl, coord::ProlSph>(point, coordsys);
-	const double
-			Phi  = potential.value(point),
+	const double Phi  = potential.value(point),
 	Ekin = 0.5 * (pow_2(point.vR) + pow_2(point.vz) + pow_2(point.vphi)),
 	E    = Phi + Ekin,
 	Lz   = coord::Lz(point),
@@ -660,52 +660,53 @@ EXP ActionAngles actionAnglesAxisymFudge(const potential::BasePotential& potenti
 namespace {
 
 /** compute the best-suitable focal distance at a 2d grid in E, L/Lcirc(E) */
+/*
 void createGridFocalDistance(
-    const potential::BasePotential& pot,
-    const std::vector<double>& gridE, const std::vector<double>& gridL,
-    /*output: focal distance*/ math::Matrix<double>& grid2dD,
-    /*output: radius of shell orbit normalized to R_circ(E) */ math::Matrix<double>& grid2dR)
+			     const potential::BasePotential& pot,
+			     const std::vector<double>& gridE, const std::vector<double>& gridL,
+    math::Matrix<double>& grid2dD,
+    math::Matrix<double>& grid2dR)
 {
-    int sizeE = gridE.size(), sizeL = gridL.size(), sizeEL = (sizeE-1) * (sizeL-1);
+	int sizeE = gridE.size(), sizeL = gridL.size(), sizeEL = (sizeE-1) * (sizeL-1);
     //grid2dD = math::Matrix<double>(sizeE, sizeL);
     //grid2dR = math::Matrix<double>(sizeE, sizeL);
-    std::string errorMessage;  // store the error text in case of an exception in the openmp block
+	std::string errorMessage;  // store the error text in case of an exception in the openmp block
     // loop over the grid in E and L (combined index for better load balancing)
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic)
 #endif
-    for(int iEL = 0; iEL < sizeEL; iEL++) {
-        try{
-            int iE    = iEL / (sizeL-1);
-            int iL    = iEL % (sizeL-1);
-            double E  = gridE[iE];
-            double Rc = R_circ(pot, E);
-            double vc = v_circ(pot, Rc);
-            double Lc = Rc * vc;
-	    double Lz = Lc * gridL[iL];
-            double Rsh, FD  = estimateFocalDistanceShellOrbit(pot, E, Lz, &Rsh);
-            grid2dD(iE, iL) = FD;
-            grid2dR(iE, iL) = Rsh / Rc;
-        }
-        catch(std::exception& ex) {
-		std::cout << ex.what() << "\n";
-        }
-    }
+	for(int iEL = 0; iEL < sizeEL; iEL++) {
+		try{
+			int iE    = iEL / (sizeL-1);
+			int iL    = iEL % (sizeL-1);
+			double E  = gridE[iE];
+			double Rc = R_circ(pot, E);
+			double vc = v_circ(pot, Rc);
+			double Lc = Rc * vc;
+			double Lz = Lc * gridL[iL];
+			double Rsh, FD  = potential::estimateFocalDistanceShellOrbit(pot, E, Lz, &Rsh);
+			grid2dD(iE, iL) = FD;
+			grid2dR(iE, iL) = Rsh / Rc;
+		}
+		catch(std::exception& ex) {
+			std::cout << ex.what() << "\n";
+		}
+	}
     // limiting cases of Lz=0 or Lz=Lcirc - copy from the adjacent column of the table
-    for(int iE=0; iE<sizeE-1; iE++) {
-        grid2dD(iE, 0)       = grid2dD(iE, 1);  // for Lz=0 don't trust the focal distance from shell orbit
-        grid2dD(iE, sizeL-1) = grid2dD(iE, sizeL-2);
-        grid2dR(iE, sizeL-1) = 1.;  // Rshell = Rcirc for the planar circular orbit
-    }
+	for(int iE=0; iE<sizeE-1; iE++) {
+		grid2dD(iE, 0)       = grid2dD(iE, 1);  // for Lz=0 don't trust the focal distance from shell orbit
+		grid2dD(iE, sizeL-1) = grid2dD(iE, sizeL-2);
+		grid2dR(iE, sizeL-1) = 1.;  // Rshell = Rcirc for the planar circular orbit
+	}
     // limiting case of E=0 - assume a Keplerian potential at large radii
-    for(int iL=0; iL<sizeL; iL++) {
-        grid2dD(sizeE-1, iL) = 0.;
-        grid2dR(sizeE-1, iL) = 1.;  // Rshell = Rcirc
-    }
-    if(!errorMessage.empty())
-        throw std::runtime_error(errorMessage);
+	for(int iL=0; iL<sizeL; iL++) {
+		grid2dD(sizeE-1, iL) = 0.;
+		grid2dR(sizeE-1, iL) = 1.;  // Rshell = Rcirc
+	}
+	if(!errorMessage.empty())
+		throw std::runtime_error(errorMessage);
 }
-
+*/
 /// return scaledE as a function of E and invPhi0 = 1/Phi(0)
 inline double scaleE(const double E, const double invPhi0) { return log(invPhi0 - 1/E); }
 
@@ -715,46 +716,9 @@ EXP ActionFinderAxisymFudge::ActionFinderAxisymFudge(
     const potential::PtrPotential& _pot, const bool interpolate) :
     invPhi0(1./_pot->value(coord::PosCyl(0,0,0))), pot(_pot), interp(*pot)
 {
-	// construct a grid in radius with unequal spacing depending on the variation of the potential
-	std::vector<double> gridR = potential::createInterpolationGrid(*pot, ACCURACY_INTERP2);
+//    math::LinearInterpolator2d interp2dR;
 
-    const int sizeE = gridR.size();
-    const int sizeL = 25;
-    const int sizeI = 25;
-
-    // convert the grid in radius into the grid in energy and xi=scaledE
-    std::vector<double> gridE(sizeE), gridEscaled(sizeE);
-    for(int i=0; i<sizeE; i++) {
-        gridE[i] = interp.value(gridR[i]);
-        gridEscaled[i] = scaleE(gridE[i], invPhi0);
-    }
-
-    // transformation s <-> u of the interval 0<=s<=1 onto 0<=u<=1, which stretches the regions
-    // near boundaries: a cubic function u(s) with zero derivatives at s=0 and s=1
-    math::ScalingCub scaling(0, 1);
-    std::vector<double> gridL(sizeL);  // grid in Lzrel = Lz/Lcirc(E)    = u(chi)
-    std::vector<double> gridI(sizeI);  // grid in I3rel = I3/I3max(E,Lz) = u(psi)
-    // for the 2d/3d interpolators we use non-uniformly spaced grids in scaled variables,
-    // where the grid spacing is also denser towards the endpoints and is determined by
-    // applying the same scaling transformation to a uniform grid.
-    // consequently, the un-scaled vars (Lzrel and I3rel) are doubly stretched (clustered near endpoints)
-    std::vector<double> gridLscaled(sizeL);   // chi = s(Lzrel)
-    std::vector<double> gridIscaled(sizeI);   // psi = s(I3rel)
-    for(int i=0; i<sizeL; i++) {
-        gridLscaled[i] = math::unscale(scaling, i/(sizeL-1.));
-        gridL[i] = math::unscale(scaling, gridLscaled[i]);  // Lzrel = u(chi)
-    }
-    for(int i=0; i<sizeI; i++) {
-        gridIscaled[i] = math::unscale(scaling, i/(sizeI-1.));
-        gridI[i] = math::unscale(scaling, gridIscaled[i]);  // and I3rel = u(psi)
-    }
-
-    // initialize the interpolator for the focal distance as a function of E and Lzrel
-    math::Matrix<double> grid2dD(gridE.size(),gridL.size());  // focal distance
-    math::Matrix<double> grid2dR(gridE.size(),gridL.size());  // Rshell / Rcirc(E)
-    createGridFocalDistance(*pot, gridE, gridL, /*output*/ grid2dD, grid2dR);
-    interpD = math::LinearInterpolator2d(gridEscaled, gridLscaled, grid2dD); //, /*regularize*/true);
-
+    /*
     if(!interpolate) {
         // nothing more to do, except perhaps writing the debug information
         if(utils::verbosityLevel >= utils::VL_VERBOSE) {
@@ -775,6 +739,7 @@ EXP ActionFinderAxisymFudge::ActionFinderAxisymFudge(
                 strm << '\n';
             }
         }
+	return;
     }
 
     // we're constructing an interpolation grid for Jr and Jz in (E,Lz,I3), suitably scaled
@@ -908,9 +873,10 @@ EXP ActionFinderAxisymFudge::ActionFinderAxisymFudge(
         }
     }
 
-    interpR = math::CubicSpline2d(gridEscaled, gridLscaled, grid2dR, /*regularize*/true);
+    interpR = math::CubicSpline2d(gridEscaled, gridLscaled, grid2dR, true);
     intJr   = math::CubicSpline3d(gridEscaled, gridLscaled, gridIscaled, grid3dJr, true);
     intJz   = math::CubicSpline3d(gridEscaled, gridLscaled, gridIscaled, grid3dJz, true);
+    */
 }
 
 EXP Actions ActionFinderAxisymFudge::actions(const coord::PosVelCyl& point) const
@@ -924,15 +890,17 @@ EXP Actions ActionFinderAxisymFudge::actions(const coord::PosVelCyl& point) cons
 
     // step 1. find the focal distance d from the interpolator
     double Lcirc = interp.L_circ(E);
+    double Lzrel = math::clip(fabs(Lz) / Lcirc, 0., 1.);
     // interpolator works in scaled variables:
     // xi = scaledE (restricted to a suitable range) and chi = s( Lz/Lcirc(E) ),
     // where s is the cubic scaling transformation
-    math::ScalingCub scaling(0, 1);
+    double fd = pot->getDelta(E, fabs(Lz)/Lcirc, invPhi0);
+/*    math::ScalingCub scaling(0, 1);
     double xi    = math::clip(scaleE(E, invPhi0), interpD.xmin(), interpD.xmax());
     double Lzrel = math::clip(fabs(Lz) / Lcirc, 0., 1.);
     double chi   = math::scale(scaling, Lzrel);
     double fd    = fmax(0, interpD.value(xi, chi));   // focal distance
-
+*/
     // if we are not using the 3d interpolation, then compute the actions by the direct method
     if(intJr.empty())
 	    return actionsAxisymFudge(*pot, point, fd);
@@ -947,7 +915,8 @@ EXP Actions ActionFinderAxisymFudge::actions(const coord::PosVelCyl& point) cons
 
     // the third coordinate in the 3d interpolation grid is I3/I3max,
     // where I3max(E, Lz) is the maximum possible value of I3, computed from the radius of a shell orbit
-    double Rshell= fmax(0, interpR.value(xi, chi)) * Rcirc;
+//    double Rshell = fmax(0, interpR.value(xi, chi)) * Rcirc;
+    double Rshell = pot->getRsh(E, fabs(Lz)/Lcirc, invPhi0);
     double PhiS  = interp.value(Rshell);
     double lamS  = pow_2(Rshell) + fd*fd;  // lambda(Rshell,z=0)
     double I3max = fmax(0, E - PhiS - (Rshell>0 ? 0.5 * pow_2(Lz/Rshell) : 0) ) * lamS;
@@ -963,10 +932,16 @@ EXP Actions ActionFinderAxisymFudge::actions(const coord::PosVelCyl& point) cons
     double I3 = 0.5*Y + add;
 
     // step 3. obtain the interpolated values of (suitably scaled) Jr and Jz
-    // as functions of three scaled variables:  E, chi, psi = s( I3/I3max )
+    // as functions of three scaled variables:  E, chi, psi = s(
+    // I3/I3max )
+    std::pair<double,double> XiChi(pot->getXiChi(E, fabs(Lz)/Lcirc, invPhi0));
+/*    double xi    = math::clip(scaleE(E, invPhi0), interpD.xmin(), interpD.xmax());
+    double Lzrel = math::clip(fabs(Lz) / Lcirc, 0., 1.);
+    double chi   = math::scale(scaling, Lzrel);*/
+    math::ScalingCub scaling(0, 1);
     double psi   = math::scale(scaling, math::clip(I3 / I3max, 0., 1.));
-    double Jrrel = fmax(0, intJr.value(xi, chi, psi));
-    double Jzrel = fmax(0, intJz.value(xi, chi, psi));
+    double Jrrel = fmax(0, intJr.value(XiChi.first, XiChi.second, psi));
+    double Jzrel = fmax(0, intJz.value(XiChi.first, XiChi.second, psi));
     return Actions(Lcirc * (1-Lzrel) * Jrrel, Lcirc * (1-Lzrel) * Jzrel, Lz);
 }
 
@@ -985,14 +960,15 @@ EXP ActionAngles ActionFinderAxisymFudge::actionAngles
     // interpolator works in scaled variables:
     // xi = scaledE (restricted to a suitable range) and chi = s( Lz/Lcirc(E) ),
     // where s is the cubic scaling transformation
-	math::ScalingCub scaling(0, 1);
+	double fd = pot->getDelta(E, fabs(Lz)/Lcirc, invPhi0);
+/*	math::ScalingCub scaling(0, 1);
 	double xi    = math::clip(scaleE(E, invPhi0), interpD.xmin(), interpD.xmax());
 	double Lzrel = math::clip(fabs(Lz) / Lcirc, 0., 1.);
-	double chi   = math::scale(scaling, Lzrel);
+	double chi   = math::scale(scaling, Lzrel);*/
 	double Rcirc = interp.R_from_Lz(Lcirc);   // radius of a circular orbit with the given E
 	if(Rcirc == 0)  // degenerate case
 		return ActionAngles(Actions(0, 0, 0), Angles(0, 0, 0));
-	double fd    = fmax(0, interpD.value(xi, chi));   // focal distance
+//	double fd    = fmax(0, interpD.value(xi, chi));   // focal distance
 
     // step 2. find the third (approximate) integral of motion
 	if(fd==0) fd = Rcirc*1e-4;
@@ -1006,62 +982,11 @@ EXP double ActionFinderAxisymFudge::focalDistance(const coord::PosVelCyl& point)
     double E     = totalEnergy(*pot, point);
     double Lz    = coord::Lz(point);
     double Lc    = interp.L_circ(E);
-    double Lzrel = math::clip(fabs(Lz) / Lc, 0., 1.);
+    return pot->getDelta(E, fabs(Lz)/Lc, invPhi0);
+/*    double Lzrel = math::clip(fabs(Lz) / Lc, 0., 1.);
     double xi    = math::clip(scaleE(E, invPhi0), interpD.xmin(), interpD.xmax());
     double chi   = math::scale(math::ScalingCub(0, 1), Lzrel);
-    return fmax(0, interpD.value(xi, chi));
+    return fmax(0, interpD.value(xi, chi));*/
 }
-
-EXP math::Matrix<double> FDfinder::derivs(double u,double Delta, double& d2p2du2,
-					  double* p2,double* p2prime){
-	double sh=sinh(u), ch=cosh(u), u0=asinh(Rsh/Delta);
-	double R=Delta*sh, R2=R*R, Delta2=pow_2(Delta);
-	double P;
-	coord::GradCyl gradP;
-	coord::HessCyl hessP;
-	pot->eval(coord::PosCyl(R,0,0),&P,&gradP,&hessP);
-	double EmP=E-P;
-	double X=2*(EmP*R2-Delta2*P);
-	double dXdR=4*EmP*R-2*(R2+Delta2)*gradP.dR;
-	double dXdDelta=-4*Delta*P;
-	double d2XdR2=4*EmP-8*R*gradP.dR-2*(R2+Delta2)*hessP.dR2;
-	double d2XdDeltadR=-4*Delta*gradP.dR;
-	double pu0=Delta*cosh(u0)*vR;
-	if(p2!=NULL) *p2=pow_2(pu0)+X-2*(EmP0*pow_2(Rsh)-Delta2*P0);
-	double dp2du=dXdR*Delta*ch;
-	d2p2du2 = d2XdR2*pow_2(Delta*ch)+dXdR*Delta*sh;
-	if(p2prime!=NULL) *p2prime=dp2du;
-	double dp2dDelta=2*pu0*vR/cosh(u0) + dXdR*sh + dXdDelta + 4*Delta*P0;
-	double dp2primedu=d2XdR2*pow_2(Delta*ch)+dXdR*Delta*sh;
-	double dp2primedDelta=d2XdR2*Delta*ch*sh+dXdR*ch+d2XdDeltadR*Delta*ch;
-	math::Matrix<double> M(2,2);
-	M(0,0)=dp2du;      M(0,1)=dp2dDelta;
-	M(1,0)=dp2primedu; M(1,1)=dp2primedDelta;
-	return M;
-}
-
-EXP double FDfinder::bestFD(double& umin, double& d2p2du2){//implements N-R search for p_u^2=dp_u^2/du=0
-	double u=asinh(.8*Rsh/Delta0), u0=asinh(Rsh/Delta0), pu0=vR*Delta0*cosh(u0);
-	double p2=1, p2prime=1, Delta=Delta0, fac=1;
-	int i=0;
-	while(i<20 && (fabs(p2)>1e-4 || fabs(p2prime)>1e-4)){
-		math::Matrix<double> M0(derivs(u,Delta,d2p2du2,&p2,&p2prime));
-		double det=M0(0,0)*M0(1,1)-M0(1,0)*M0(0,1);
-		double dY0 = ( M0(1,1)*p2-M0(0,1)*p2prime)/det;
-		double dY1 = (-M0(1,0)*p2+M0(0,0)*p2prime)/det;
-		while(fabs(dY0)>.5*u){
-			dY0*=.5; dY1*=.5;
-		}
-		while(fabs(dY1)>.5*Delta){
-			dY0*=.5; dY1*=.5;
-		}
-		u-=dY0; Delta-=dY1;
-		i++;
-	}
-//	printf("bestFD %f %f\n",p2,p2prime);
-	umin=u;
-	return Delta;
-}	
-
 
 }  // namespace actions

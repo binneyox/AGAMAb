@@ -4,6 +4,7 @@
 #include "potential_composite.h"
 #include "potential_multipole.h"
 #include "potential_cylspline.h"
+#include "potential_interpolators.h"
 #include "actions_newtorus.h"
 #include <stdexcept>
 #include <cassert>
@@ -164,12 +165,18 @@ EXP void updateTotalPotential(SelfConsistentModel& model)
 	    ptl->setJzcrit(spl);
 	    model.totalPotential = ptl;
     } else */ {
-	    potential::CompositeCyl* ptl = new potential::CompositeCyl (compPot);
+	    potential::PtrPotential ptl(new potential::CompositeCyl(compPot));
+	    potential::PtrShellInterpolator PtrShellI(new potential::ShellInterpolator(*ptl));
+	    potential::PtrPolarInterpolator PtrPolarI(new potential::PolarInterpolator(*ptl, PtrShellI));
+/*	    potential::CompositeCyl ptl(potential::CompositeCyl(compPot));
+	    potential::PtrShellInterpolator PtrShellI(new potential::ShellInterpolator(ptl);
+	    potential::PtrPolarInterpolator PtrPolarI(new
+	    potential::PolarInterpolator(ptl, PtrShellI);*/
 //	    printf("in updateTotalPotential calling mapJcrit\n");    
-	    std::vector<double> cJcrit(actions::mapJcrit(*ptl));
+//	    std::vector<double> cJcrit(potential::mapJcrit(*ptl));
 //	    printf("in updateTotalPotential calling setJzcrit\n");    
-	    ptl->setJzcrit(cJcrit);
-	    model.totalPotential.reset(ptl);
+//	    ptl->setJzcrit(cJcrit);
+	    model.totalPotential.reset(new potential::CompositeCyl(compPot, PtrShellI, PtrPolarI));
     }    
     // finally, create the action finder for the new potential
  //   printf("in updateTotalPotential udating AF\n");

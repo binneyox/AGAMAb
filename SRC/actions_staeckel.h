@@ -17,7 +17,7 @@ but virtually nothing of the original code remains.
 */
 #pragma once
 #include "actions_base.h"
-#include "actions_focal_distance_finder.h"
+#include "potential_interpolators.h"
 #include "smart.h"
 
 namespace actions {
@@ -173,32 +173,9 @@ private:
     const potential::PtrPotential pot;      ///< the potential Phi in which actions are computed
     const potential::Interpolator interp;   ///< 1d interpolator for Lcirc(E)
     math::LinearInterpolator2d interpD;     ///< 2d interpolator for the focal distance Delta(E,Lz)
-//   math::LinearInterpolator3d interpD;     ///< 3d interpolator for the focal distance Delta(E,Lz)
-//    math::LinearInterpolator3d interpDip;   ///< 3d interpolator for min lam_dip in f(lam) contributed by I3
     math::CubicSpline2d interpR;            ///< 2d interpolator for Rshell(E,Lz) / Rcirc(E)
     math::CubicSpline3d intJr, intJz;       ///< 3d interpolators for Jr and Jz as functions of (E,Lz,I3)
-};
-// Class to find the largest FD that yields a centrifugal barrier even
-// with Lz=0. Rsh is the radius of the shell orbit and vR is vR is
-// what's required to create the orbit of interest shooting from
-// (Rsh,0). Delta is an estimate of FD. The method bestFD() returns the
-// FD at second argument; the first is the value of u at which p_u^2=0
-//
-class EXP FDfinder{
-	private:
-		double E,Rsh,vR,P0,Delta0,EmP0;
-		const potential::PtrPotential pot;
-	public:
-		FDfinder(const double _E,const double _Rsh,const double _vR,
-			 const double _Delta,
-			 const potential::PtrPotential _pot) :
-		    E(_E), Rsh(_Rsh), vR(_vR), Delta0(_Delta), pot(_pot){
-			P0=pot->value(coord::PosCyl(Rsh,0,0));
-			EmP0=E-P0;
-		}
-		math::Matrix<double> derivs(double u,double Delta,double& d2p2du2,
-					    double* p2=NULL,double* p2prime=NULL);
-		double bestFD(double&, double&);
+    potential::ShellInterpolator shellInterp;
 };
 
 ///@}

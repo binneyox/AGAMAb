@@ -5,10 +5,11 @@
 #include "actions_newgenfnc.h"
 #include "actions_newisochrone.h"
 #include "actions_harmonicoscillator.h"
-#include "actions_focal_distance_finder.h"
+#include "potential_interpolators.h"
 #include "actions_spherical.h"
 #include "potential_base.h"
 #include "potential_utils.h"
+#include "potential_interpolators.h"
 #include "math_core.h"
 #include "math_specfunc.h"
 #include "math_fit.h"
@@ -127,6 +128,9 @@ namespace actions {
 		}
 	};
 
+	/* Interpolate betwee toris with the same ToyMapType */
+	EXP Torus InterpTorus(const double x, const Torus& T0, const Torus& T1);
+
 	/*
 	 * Class for fitting torus to an orbit
 	*/
@@ -149,12 +153,10 @@ namespace actions {
 	private:
 		const potential::BasePotential& pot;
 		const double defaultTol, invPhi0;
-		math::LinearInterpolator2d interpD; //for Delta values
-		math::LinearInterpolator2d interpR; //for Rshell(L,Xi) values
-		math::LinearInterpolator2d interpV; //for Vshell(L,Xi) values
-		math::LinearInterpolator2d interpRE; //for Rshell(E,Xi) values
-		math::LinearInterpolator interpJz;//Jr(Jr) for box loop orbit transition
+//		math::LinearInterpolator2d interpD; //for Delta values
+//		math::LinearInterpolator2d interpR; //for Rshell(L,Xi) values
 		math::QuinticSpline2d interpJrE;//Esc(Q,Y) for planar orbit, Q=log(Lz+Jr),Y=Lz/(Lz+Jr). Esc=log(1/Phi(0)-1/E)
+//		std::vector<double> JzcritSpl;// Jzcrit(Jfast)
 		std::string logfname;
 #ifdef TEST
 		/* Test_it compares analytic and numerical derivatives */
@@ -167,10 +169,12 @@ namespace actions {
 		 * of the residual H */
 		PerturbingHamiltonian get_pH(const Torus&,
 			int nf, bool ifp, const potential::BasePotential*);
-		//		void setConsts(actions::Actions, double, double&, double&, double&, Isochrone&, coord::UVSph&) const;
-				//ToyMap chooseTM(actions::Actions, double&, double&, double&) const;
+		//void setConsts(actions::Actions, double, double&, double&, double&, Isochrone&, coord::UVSph&) const;
+		//ToyMap chooseTM(actions::Actions, double&, double&, double&) const;
 		int tmax;// Max number of terms retained in residual H
 	public:
+//		potential::ShellInterpolator shellInterp;
+//		potential::PolarInterpolator polarInterp;
 		/* Creator of tori in given potential. GF deemed ok if
 		 * dispersion in H < tol*freqScale*Jtotal */
 		TorusGenerator(const potential::BasePotential& _pot,
@@ -187,9 +191,10 @@ namespace actions {
 		Torus fitFrom(const Actions&, const Torus&, const double tighten = 1) const;
 		eTorus fiteTorus(const Actions&, const potential::BasePotential* _addPhi = NULL);
 		eTorus fiteTorus(const Actions&, const double, const potential::BasePotential* _addPhi = NULL);
-		double getDelta(double&, double&);
-		double getDelta(Actions&);
-		double getRsh(Actions&);
+		double getDelta(double, double) const;
+		double getDelta(const Actions&) const;
+		double getRsh(const Actions&) const;
+		void getRshDelta(const double, const double, double&, double&) const;
 		void test_it(const Actions&, std::vector<double>&);
 		std::vector<Torus> constE(const double Jrmin, const Actions& Jstart, const int Nstep);
 		void old_getHn(const Torus&, int);
@@ -218,6 +223,7 @@ namespace actions {
 		}
 		Torus T(const double x) const;
 	};
+
 	class EXP TorusGrid3 {
 	private:
 		const std::vector<double>& xs, ys, zs;
@@ -240,6 +246,7 @@ namespace actions {
 			return T(J.Jr, J.Jz, J.Jphi);
 		}
 	};
+
 	class EXP ActionFinderTG : public BaseActionFinder {
 	private:
 		const potential::PtrPotential pot;
@@ -271,6 +278,7 @@ namespace actions {
 			return Actions(actionAngles(point));
 		}
 	};
+
 	EXP void getGridBoxLoop(const potential::BasePotential& pot,
 				std::vector<double>& gridE,
 				std::vector<double>& gridJr,

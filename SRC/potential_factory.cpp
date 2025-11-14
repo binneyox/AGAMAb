@@ -760,10 +760,12 @@ PtrPotential readPotential(const std::string& fileName, const units::ExternalUni
 		    components.push_back(readPotential(prefix+buffer, converter));
 		    printf("Pot cpt read\n");
 	    }
-	    CompositeCyl* ptl = new CompositeCyl (components);
-	    std::vector<double> cJcrit(actions::mapJcrit(*ptl));
-	    ptl->setJzcrit(cJcrit);
-	    return PtrPotential(ptl);
+	    PtrPotential ptl(new CompositeCyl(components));
+	    PtrShellInterpolator PtrShellI(new ShellInterpolator(*ptl));
+	    PtrPolarInterpolator PtrPolarI(new PolarInterpolator(*ptl, PtrShellI));
+	    return PtrPotential(new CompositeCyl (components, PtrShellI, PtrPolarI));
+	    //Here we could compute Shheel & Polar Interpolators
+	    //return PtrPotential(new CompositeCyl (components));
         }
     }
     throw std::runtime_error("readPotential: cannot find valid potential coefficients in file "+fileName);
@@ -1033,9 +1035,11 @@ PtrPotential createPotentialFromParticles(const AllParam& param,
 			   CylSpline::create(particles, param.symmetryType, param.mmax,
 					     param.gridSizeR, param.rmin, param.rmax,
 					     param.gridSizez, param.zmin, param.zmax);
-	std::vector<double> cJcrit(actions::mapJcrit(*ptl));
-	ptl->setJzcrit(cJcrit);
-	return ptl;
+	PtrShellInterpolator PtrShellI(new ShellInterpolator(*ptl));
+	PtrPolarInterpolator PtrPolarI(new PolarInterpolator(*ptl, PtrShellI));
+	std::vector<PtrPotential> components;
+	components.push_back(ptl);
+	return PtrPotential(new CompositeCyl(components, PtrShellI, PtrPolarI));
 	/*
     switch(param.potentialType) {
     case PT_MULTIPOLE:
@@ -1145,9 +1149,11 @@ PtrPotential createPotentialExpansion(const AllParam& param, const SourceType& s
 			   CylSpline::create(source, param.mmax,
 					     param.gridSizeR, param.rmin, param.rmax,
 					     param.gridSizez, param.zmin, param.zmax);
-	std::vector<double> cJcrit(actions::mapJcrit(*ptl));
-	ptl->setJzcrit(cJcrit);
-	return ptl;
+	PtrShellInterpolator PtrShellI(new ShellInterpolator(*ptl));
+	PtrPolarInterpolator PtrPolarI(new PolarInterpolator(*ptl, PtrShellI));
+	std::vector<PtrPotential> components;
+	components.push_back(ptl);
+	return PtrPotential(new CompositeCyl(components, PtrShellI, PtrPolarI));
 
  /*   switch(param.potentialType) {
     case PT_MULTIPOLE:
@@ -1298,11 +1304,10 @@ PtrPotential createPotential(
     /*if(componentsPot.size() == 1)
         return componentsPot[0];
     else*/ {
-	    CompositeCyl* ptl = new CompositeCyl (componentsPot);
-	    std::vector<double> cJcrit(actions::mapJcrit(*ptl));
-	    ptl->setJzcrit(cJcrit);
-	    return PtrPotential(ptl);
-//        return PtrPotential(new CompositeCyl(componentsPot));
+	    PtrPotential ptl(new CompositeCyl(componentsPot));
+	    PtrShellInterpolator PtrShellI(new ShellInterpolator(*ptl));
+	    PtrPolarInterpolator PtrPolarI(new PolarInterpolator(*ptl, PtrShellI));
+	    return PtrPotential(new CompositeCyl (componentsPot, PtrShellI, PtrPolarI));
     }
 }
 
