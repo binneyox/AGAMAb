@@ -1,0 +1,103 @@
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (MiKTeX 21.1) (preloaded format=pdftex 2021.1.19)  1 JUL 2025 16:11
+entering extended mode
+**./obs.tex
+(obs.tex (c:\users\binney\u\texinput\pmacro.tex
+\bmifam=\fam8
+\vecfam=\fam9
+\notenumber=\count26
+\eqnumber=\count27
+\fignumber=\count28
+\probnumber=\count29
+\abstr=\box16
+\secno=\count30
+\subsecno=\count31
+\subsubsecno=\count32
+)
+Overfull \hbox (8.06133pt too wide) in paragraph at lines 46--49
+\tentt PosSky p(from[]RAdec(double ra,double dec)) Pos-Sky p(from[]RAdec(PosSky
+ peq)) \tenrm yield|
+
+\hbox(6.94444+2.22223)x410.5509, glue set - 1.0
+.\tentt P
+.\tentt o
+.\tentt s
+.\tentt S
+.\tentt k
+.etc.
+
+! I can't write on file `obs.pdf'.
+Please type another file name for output: obs.pdf
+[1{C:/Users/binney/AppData/Local/MiKTeX/2.9/pdftex/config/pdftex.map}]
+Overfull \hbox (7.13268pt too wide) in paragraph at lines 121--129
+\tenrm suf-fices for ob-ser-va-tions of ex-ter-nal galax-ies. \tentt Base-Dust-
+Model dsty(5,0.1,norm,12,2,fromKpc)|
+
+\hbox(6.94444+2.22223)x410.5509, glue set - 1.0
+.\tenrm s
+.\tenrm u
+.\discretionary replacing 1
+..\tenrm f
+..\tenrm -
+.|\tenrm  (ligature fi)
+.\tenrm  (ligature ffi)
+.\tenrm c
+.etc.
+
+
+Overfull \hbox (5.80696pt too wide) in paragraph at lines 146--153
+\tentt DustModel dsty(Rd,z0,dAvds,Rw,Hw,&sun) \tenrm or \tentt Dust-Model dsty(
+gasDens,dAvds,&sun) \tenrm make|
+
+\hbox(6.94444+2.22223)x410.5509, glue set - 1.0
+.\tentt D
+.\tentt u
+.\tentt s
+.\tentt t
+.\tentt M
+.etc.
+
+[2] [3]
+Overfull \hbox (4.19548pt too wide) in paragraph at lines 306--313
+\tentt computeMomentsLOS(model, los, &dens[0], &Vphi[0], &sig-mas[0], NULL, NUL
+L, NULL,|
+
+\hbox(6.94444+2.22223)x410.5509
+.\tentt c
+.\tentt o
+.\tentt m
+.\tentt p
+.\tentt u
+.etc.
+
+
+Overfull \hbox (33.94554pt too wide) in paragraph at lines 330--337
+\tentt sampleLOS(model,&Los,N,8,15) \tenrm re-turns \tentt N \tenrm phase-space
+ lo-ca-tions (\tentt std::vector<coord::PosVelCyl>\tenrm )|
+
+\hbox(7.5+2.5)x410.5509, glue set - 1.0
+.\tentt s
+.\tentt a
+.\tentt m
+.\tentt p
+.\tentt l
+.etc.
+
+[4] )<C:/Users/binney/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsf
+onts/cm/cmbx10.pfb><C:/Users/binney/AppData/Local/Programs/MiKTeX 2.9/fonts/typ
+e1/public/amsfonts/cm/cmex10.pfb><C:/Users/binney/AppData/Local/Programs/MiKTeX
+ 2.9/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/binney/AppData/Local/P
+rograms/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Users/binney/Ap
+pData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Us
+ers/binney/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr
+10.pfb><C:/Users/binney/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/am
+sfonts/cm/cmr7.pfb><C:/Users/binney/AppData/Local/Programs/MiKTeX 2.9/fonts/typ
+e1/public/amsfonts/cm/cmsy10.pfb><C:/Users/binney/AppData/Local/Programs/MiKTeX
+ 2.9/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Users/binney/AppData/Local/Pr
+ograms/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmti10.pfb><C:/Users/binney/Ap
+pData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
+Output written on obs.pdf (4 pages, 155033 bytes).
+PDF statistics:
+ 59 PDF objects out of 1000 (max. 8388607)
+ 0 named destinations out of 1000 (max. 500000)
+ 1 words of extra memory for PDF output out of 10000 (max. 10000000)
+

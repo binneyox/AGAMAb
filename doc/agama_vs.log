@@ -1,0 +1,28 @@
+This is mikTeX, Version 3.14159265 (MiKTeX 21.1) (preloaded format=tex 2021.1.19)  24 JUN 2025 16:40
+**./agama_vs.tex
+(agama_vs.tex (c:\users\binney\u\texinput\pmacro.tex
+\bmifam=\fam8
+\vecfam=\fam9
+\notenumber=\count26
+\eqnumber=\count27
+\fignumber=\count28
+\probnumber=\count29
+\abstr=\box16
+\secno=\count30
+\subsecno=\count31
+\subsubsecno=\count32
+)
+Overfull \hbox (8.58887pt too wide) in paragraph at lines 14--15
+\tenrm https://solarianprogrammer.com/2020/01/26/getting-started-gsl-gnu-scient
+ific-library-windows-|
+
+\hbox(7.5+2.5)x410.5509
+.\tenrm h
+.\kern-0.27779
+.\tenrm t
+.\tenrm t
+.\tenrm p
+.etc.
+
+[1] [2] [3] )
+Output written on agama_vs.dvi (3 pages, 10504 bytes).
