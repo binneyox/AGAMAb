@@ -1,0 +1,68 @@
+# set up folder names
+SRCDIR    = src
+OBJDIR    = obj
+EXEDIR    = exe
+TESTSDIR  = tests
+
+# sources of the main library
+SOURCES   = \
+            math_core.cpp \
+            math_fit.cpp \
+	    math_fourier.cpp \
+            math_gausshermite.cpp \
+            math_geometry.cpp \
+            math_linalg.cpp \
+            math_ode.cpp \
+            math_optimization.cpp \
+            math_random.cpp \
+            math_sample.cpp \
+            math_specfunc.cpp \
+            math_sphharm.cpp \
+            math_spline.cpp \
+            particles_io.cpp \
+	    actions_harmonicoscillator.cpp \
+            actions_newisochrone.cpp \
+	    actions_newgenfnc.cpp \
+	    actions_newtorus.cpp \
+            actions_spherical.cpp \
+            actions_staeckel.cpp \
+            coord.cpp \
+            cubature.cpp \
+            df_base.cpp \
+            df_disk.cpp \
+            df_factory.cpp \
+            df_halo.cpp \
+	    df_interpolated.cpp \
+            df_spherical.cpp \
+            galaxymodel_base.cpp \
+            galaxymodel_densitygrid.cpp \
+            galaxymodel_jeans.cpp \
+            galaxymodel_losvd.cpp \
+            galaxymodel_selfconsistent.cpp \
+            galaxymodel_spherical.cpp \
+            galaxymodel_velocitysampler.cpp \
+	    map.cpp \
+            orbit.cpp \
+            orbit_lyapunov.cpp \
+	    obs_base.cpp \
+	    obs_dust.cpp \
+	    obs_los.cpp \
+            potential_analytic.cpp \
+            potential_base.cpp \
+            potential_composite.cpp \
+            potential_cylspline.cpp \
+            potential_dehnen.cpp \
+            potential_disk.cpp \
+            potential_factory.cpp \
+            potential_ferrers.cpp \
+            potential_king.cpp \
+            potential_interpolators.cpp \
+            potential_multipole.cpp \
+            potential_perfect_ellipsoid.cpp \
+            potential_spheroid.cpp \
+            potential_utils.cpp \
+	    Py_agama.cpp \
+            utils.cpp \
+            utils_config.cpp
+# test and example programs
+TESTSRCS  = 
