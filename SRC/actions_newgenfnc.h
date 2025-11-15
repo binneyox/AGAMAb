@@ -29,11 +29,11 @@ namespace actions {
 	public:
 		GenFnc() {}
 		GenFnc(const GenFncIndices _indices, const std::vector<double> _values,
-			const GenFncDerivs _derivs/*, const GenFncFracs _fracs*/) :
-			indices(_indices), values(_values), derivs(_derivs)/*, fracs(_fracs)*/ {
+			const GenFncDerivs _derivs) :
+			indices(_indices), values(_values), derivs(_derivs) {
 		}
 		GenFnc(const GenFnc& GF) : indices(GF.indices), values(GF.values),
-			derivs(GF.derivs)/*, fracs(GF.fracs)*/ {
+			derivs(GF.derivs) {
 		}
 		double strength(void) const;
 		void print(void) const;
@@ -41,10 +41,10 @@ namespace actions {
 		void read(FILE*);
 		double giveValue(const GenFncIndex&) const;
 		unsigned int numTerms() const { return indices.size(); }
-		unsigned int numParams() const { return indices.size()/* + 2 * fracs.size()*/; }
+		unsigned int numParams() const { return indices.size(); }
 		std::pair<int, int> maxIndices() const;
 		void summarize(void) const {
-			printf("GF has %d terms\n", numTerms()/*, numFracs()*/);
+			printf("GF has %d terms\n", numTerms());
 		}
 		Actions toyJ(const Actions&, const Angles&) const;// returns toy actions
 		Angles trueA(const Angles& thetaT) const;// returns true angles
@@ -75,18 +75,14 @@ namespace actions {
 	public:
 		/** construct the object for the fixed indexing scheme,
 			values of real actions, and array of toy angles */
-		GenFncFit(const GenFncIndices& indices, const int, const int,
-			/*const GenFncFitFracs& fracs,*/
+		GenFncFit(const GenFncIndices& indices, const double, const double,
 			const Actions& acts);
 		GenFncFit(void) {};
 		/** number of terms in the generating function */
 		unsigned int numTerms() const { return indices.size(); }
 
-		/** number of fractions in the generating function */
-//		unsigned int numFracs() const { return fracs.size(); }
-
 		/** number of parameters in the generating function */
-		unsigned int numParams() const { return indices.size()/* + 2 * fracs.size()*/; }
+		unsigned int numParams() const { return indices.size(); }
 
 		/** number of points in the array of angles */
 		unsigned int numPoints() const { return angs.size(); }

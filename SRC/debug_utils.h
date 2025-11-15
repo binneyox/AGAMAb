@@ -94,18 +94,17 @@ inline std::ostream& operator<< (std::ostream& s, const coord::PosVelCyl& p) {
         "vR: "<<p.vR <<"  vz: "<<p.vz <<"  vphi: "<<p.vphi<< "   ";
     return s;
 }
-/*
 inline std::ostream& operator<< (std::ostream& s, const coord::PosVelSph& p) {
     s << "r: "<< p.r << "  theta: "<< p.theta << "  phi: "<< p.phi<< "  "
         "vr: "<<p.vr <<"  vtheta: "<<p.vtheta <<"  vphi: "<<p.vphi<< "   ";
     return s;
-}*/
-inline std::ostream& operator<< (std::ostream& s, const coord::PosVelSphMod& p) {
+}
+/*inline std::ostream& operator<< (std::ostream& s, const coord::PosVelSphMod& p) {
     s << "r: "<< p.r << "  tau: "<< p.tau << "  phi: "<< p.phi<< "  "
         "pr: "<<p.pr <<"  ptau: "<<p.ptau <<"  pphi: "<<p.pphi<< "   ";
     return s;
 }
-
+*/
 inline std::ostream& operator<< (std::ostream& s, const coord::GradCar& p) {
     s << "dx: "<<p.dx <<"  dy: "<<p.dy <<"  dz: "<<p.dz<< "   ";
     return s;

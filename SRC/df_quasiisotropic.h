@@ -35,7 +35,7 @@ public:
     QuasiIsotropic(const math::LogLogSpline& _df, const potential::BasePotential& potential) :
         df(_df), pv(potential::PotentialWrapper(potential)), af(potential) {}
 
-    virtual double value(const actions::Actions &J) const
+    virtual double value(const actions::Actions &J,const double Jrcrit=0) const
     {
         return df(pv(af.E(J)));
     }
