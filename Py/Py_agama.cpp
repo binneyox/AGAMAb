@@ -28,14 +28,6 @@
 #include <stdio.h>
 namespace py = pybind11;
 using namespace pybind11::literals;
-namespace actions{
-EXP class Jzfind{
-public:
-    std::vector<double> params;
-    Jzfind(const potential::BasePotential &_pot):params(mapJcrit(_pot)){};
-    double value(const double Jr){return math::evalPoly(params,Jr);}
-};
-}
 PYBIND11_MODULE(Py_agama, m) {
     using Bspl13=math::BsplineInterpolator1d<3>;
     py::class_<Bspl13>(m,"BsplineInterpolator1d3")
@@ -437,9 +429,10 @@ PYBIND11_MODULE(Py_agama, m) {
         .def("name",&potential::BasePotential::name)
         .def("value",&potential::BasePotential::value<coord::Car>)
         .def("value",&potential::BasePotential::value<coord::Cyl>)
+        .def("getJzcrit",&,&potential::BasePotential::getJzcrit,"Given Jf=2*Jr+Jz gives the Jz at which the box loop orbit transition occurs")
         .def("eval",[](potential::BasePotential &self, coord::PosCar x,bool pot=false,bool der=false,bool hess=false)
         ->py::object{
-            if(!pot&!der&&!hess)pot=true;
+            if(!pot&&!der&&!hess)pot=true;
             double pot0;
             coord::GradCar ders;
             coord::HessCar hess1;
@@ -457,7 +450,7 @@ PYBIND11_MODULE(Py_agama, m) {
         },"x"_a,"pot"_a=false,"der"_a=false,"hess"_a=false)
         .def("eval",[](potential::BasePotential &self, coord::PosCyl x,bool pot=false,bool der=false,bool hess=false)
         -> py::object{
-            if(!pot&!der&&!hess)pot=true;
+            if(!pot&&!der&&!hess)pot=true;
             double pot0;
             coord::GradCyl ders;
             coord::HessCyl hess1;
@@ -475,7 +468,7 @@ PYBIND11_MODULE(Py_agama, m) {
         },"x"_a,"pot"_a=false,"der"_a=false,"hess"_a=false)
         .def("eval",[](potential::BasePotential &self, coord::PosSph x,bool pot=false,bool der=false,bool hess=false)
         -> py::object{
-            if(!pot&!der&&!hess)pot=true;
+            if(!pot&&!der&&!hess)pot=true;
             double pot0;
             coord::GradSph ders;
             coord::HessSph hess1;
@@ -558,14 +551,10 @@ PYBIND11_MODULE(Py_agama, m) {
             if(type<0)typer=0;
             return self.fitTorus(J,tighten,actions::ToyPotType(type));
         },"J"_a,"tighten"_a=1,"type"_a=0)
+        .def("interpTorus",[](actions::TorusGenerator &self, double x, actions::Torus T0, actions::Torus T1){
+            return self.interpTorus(x,T0,T1);})
         .doc()="Class Torus Generator is used to make Tori with fit torus function.\n"
         "Initialised with a potential as well as optionally the tolerance which sets how much hamiltonian can vary along torus.";
-    py::class_<actions::Jzfind>(m,"Jzfind")
-        .def(py::init<const potential::BasePotential&>(),"Potential"_a)
-        .def_readwrite("parameters",&actions::Jzfind::params)
-        .def("value",&actions::Jzfind::value)
-        .doc()="Class Jzfind is used to find the value of Jz at the box loop orbit transition. This is done by a polynomial fit.\n"
-        "Initialised with a potential. Function value return critical Jz given Jr and parameters is parameters of the polynomial.";
     py::class_<actions::Torus>(m,"Torus")
 		.def("from_true",&actions::Torus::from_true,"Given true angle coordinates, gives position and momentum.")
 	    .def("from_toy",&actions::Torus::from_toy,"Given toy angle coordinates, gives position and momentum.")
@@ -848,9 +837,6 @@ PYBIND11_MODULE(Py_agama, m) {
     m.def("integrateTraj",[] (coord::PosVelCyl xv,double T,double dt,potential::PtrPotential pot){
         return orbit::integrateTraj(xv,T,dt,*pot);
     } );
-    m.def("interpTorus",[](double x,actions::Torus T0,actions::Torus T1, actions::TorusGenerator TG){
-        return actions::interpTorus(x,T0,T1,&TG);
-    },"x"_a,"T0"_a,"T1"_a,"TorusGenerator"_a,"function to interpolate between two tori, T=x*T0+(1-x)*T1\n");  
     m.def("createDistributionFunction",&df::createDistributionFunction,"params"_a,"potential"_a,"density"_a=NULL,"converter"_a=units::ExternalUnits());
     m.def("createDistributionFunction",[](const utils::KeyValueMap &params,potential::BasePotential *potential,units::ExternalUnits converter=units::ExternalUnits())
       {return df::createDistributionFunction(params,potential,NULL,converter);}
