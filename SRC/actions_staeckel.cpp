@@ -557,9 +557,35 @@ ActionAngles computeActionAngles(
     return ActionAngles(acts, angs);
 }
 
+//For eccentric orbits, modify focal distance around I3crit 
+double NovDelta(const double I3,const double I3crit,const double I3max,
+		const double FD, const double FDcrit,double fix){
+	double Ibot=I3crit-.75*(I3max-I3crit), Itop=I3crit+.75*(I3max-I3crit);
+	if(I3 < Ibot)
+		return FD;
+	else{
+		double Dhat = .5*(FD-FDcrit)*fix, Dbar = FD-Dhat;
+		if(I3 < Itop){
+			double psi = 2*M_PI*(I3-Ibot)/(Itop-Ibot);
+			return Dbar+Dhat*cos(psi);
+		}
+		else
+			return FD;
+	}
+}
+
+
 }  // internal namespace
 
 // -------- THE DRIVER ROUTINES --------
+
+EXP double getI3(const potential::BasePotential& potential, 
+		 const coord::PosVelCyl& point, const coord::ProlSph& coordsys){
+	AxisymFunctionFudge fnc(findIntegralsOfMotionAxisymFudge
+				(potential, point, coordsys));
+	return fnc.I3;
+}
+			
 
 /** auxiliary function that enters the definition of canonical momentum for 
     for the Staeckel potential: it is the numerator of eq.50 in de Zeeuw(1985);
@@ -624,22 +650,45 @@ EXP ActionAngles actionAnglesAxisymStaeckel(const potential::OblatePerfectEllips
 }
 
 EXP Actions actionsAxisymFudge(const potential::BasePotential& potential,
-    const coord::PosVelCyl& point, double focalDistance)
+			       const coord::PosVelCyl& point, double fd,
+			      double fd0, double I3)
 {
-    if(!isAxisymmetric(potential))
-        throw std::invalid_argument("Fudge approximation only works for axisymmetric potentials");
-    if(focalDistance<=0)
-        focalDistance = fmax(point.R, 1.) * 1e-4;   // this is a temporary workaround!
-    const coord::ProlSph coordsys(focalDistance);
-    const AxisymFunctionFudge fnc = findIntegralsOfMotionAxisymFudge(potential, point, coordsys);
-    if(!isFinite(fnc.E+fnc.I3+fnc.Lz) || fnc.E>=0)
-        return Actions(NAN, NAN, fnc.Lz);
-    const AxisymIntLimits lim = findIntegrationLimitsAxisym(fnc);
-    return computeActions(fnc, lim);
+	if(!isAxisymmetric(potential))
+		throw std::invalid_argument("Fudge approximation only works for axisymmetric potentials");
+	if(fd<=0)
+		fd = fmax(point.R, 1.) * 1e-4;   // this is a temporary workaround!
+	const coord::ProlSph coordsys(fd);
+	const coord::ProlSph coordsys0(fd0);
+	const AxisymFunctionFudge fnc = findIntegralsOfMotionAxisymFudge(potential, point, coordsys);
+	const AxisymFunctionFudge fnc0 = findIntegralsOfMotionAxisymFudge(potential, point, coordsys0);
+	printf("(I3s %g %g) ",fnc.I3,I3);
+	if(!isFinite(fnc.E+fnc.I3+fnc.Lz) || fnc.E>=0)
+		return Actions(NAN, NAN, fnc.Lz);
+	const AxisymIntLimits lim = findIntegrationLimitsAxisym(fnc);
+	return computeActions(fnc, lim);
+}
+
+EXP Actions actionsAxisymFudge(const potential::BasePotential& potential,
+			       const coord::PosVelCyl& point, double focalDistance,
+			      double Umin)
+{
+	if(!isAxisymmetric(potential))
+		throw std::invalid_argument("Fudge approximation only works for axisymmetric potentials");
+	if(focalDistance<=0)
+		focalDistance = fmax(point.R, 1.) * 1e-4;   // this is a temporary workaround!
+	const coord::ProlSph coordsys(focalDistance);
+	const AxisymFunctionFudge fnc = findIntegralsOfMotionAxisymFudge(potential, point, coordsys);
+	if(!isFinite(fnc.E+fnc.I3+fnc.Lz) || fnc.E>=0)
+		return Actions(NAN, NAN, fnc.Lz);
+	AxisymIntLimits lim = findIntegrationLimitsAxisym(fnc);
+	lim.lambda_min =  fmax(lim.lambda_min, focalDistance * sinh(Umin));
+	return computeActions(fnc, lim);
 }
 
 EXP ActionAngles actionAnglesAxisymFudge(const potential::BasePotential& potential, 
-    const coord::PosVelCyl& point, double focalDistance, Frequencies* freq)
+					 const coord::PosVelCyl& point,
+					 double focalDistance,
+					 Frequencies* freq, double Umin)
 {
     if(!isAxisymmetric(potential))
         throw std::invalid_argument("Fudge approximation only works for axisymmetric potentials");
@@ -651,7 +700,8 @@ EXP ActionAngles actionAnglesAxisymFudge(const potential::BasePotential& potenti
         if(freq) freq->Omegar = freq->Omegaz = freq->Omegaphi = NAN;
         return ActionAngles(Actions(NAN, NAN, fnc.Lz), Angles(NAN, NAN, NAN));
     }
-    const AxisymIntLimits lim = findIntegrationLimitsAxisym(fnc);
+    AxisymIntLimits lim = findIntegrationLimitsAxisym(fnc);
+    lim.lambda_min =  fmax(lim.lambda_min, focalDistance * sinh(Umin));
     return computeActionAngles(fnc, lim, freq);
 }
 
@@ -890,36 +940,39 @@ EXP Actions ActionFinderAxisymFudge::actions(const coord::PosVelCyl& point) cons
 
     // step 1. find the focal distance d from the interpolator
     double Lcirc = interp.L_circ(E);
-    double Lzrel = math::clip(fabs(Lz) / Lcirc, 0., 1.);
-    // interpolator works in scaled variables:
-    // xi = scaledE (restricted to a suitable range) and chi = s( Lz/Lcirc(E) ),
-    // where s is the cubic scaling transformation
-    double fd = pot->getDelta(E, fabs(Lz)/Lcirc, invPhi0);
-/*    math::ScalingCub scaling(0, 1);
-    double xi    = math::clip(scaleE(E, invPhi0), interpD.xmin(), interpD.xmax());
-    double Lzrel = math::clip(fabs(Lz) / Lcirc, 0., 1.);
-    double chi   = math::scale(scaling, Lzrel);
-    double fd    = fmax(0, interpD.value(xi, chi));   // focal distance
-*/
+    double Lzrel = fabs(Lz) / Lcirc;
+    double fd = pot->getDelta(E, Lzrel, invPhi0);
     // if we are not using the 3d interpolation, then compute the actions by the direct method
-    if(intJr.empty())
+    if(intJr.empty() && Lzrel>0.1)
 	    return actionsAxisymFudge(*pot, point, fd);
 
     // step 2. find the third (approximate) integral of motion
     double Rcirc = interp.R_from_Lz(Lcirc);   // radius of a circular orbit with the given E
     if(Rcirc == 0)  // degenerate case
-        return Actions(0, 0, 0);
+	    return Actions(0, 0, 0);
+    // get FD I3crit Umin of box/loop transition orbit
+    double FDcrit,I3crit, Umin;
+    pot->getFDI3critUmin(E, invPhi0, FDcrit, I3crit, Umin);
+    coord::ProlSph cs(FDcrit);
+    double I3 = getI3(*pot, point, cs);
+    double Rshell = pot->getRsh(E, fabs(Lz)/Lcirc, invPhi0);
+    double I3max = 0.5 * (pow_2(Rshell) + pow_2(FDcrit))
+		   * (pow_2(point.vR)+pow_2(point.vz));
+    fd = NovDelta(I3,I3crit,I3max,fd,FDcrit,2/(1+exp(4*pow_2(Lz)/I3max)));
     if(fd==0) fd = Rcirc*1e-4;
+    if(I3 < I3crit) Umin=0;
+    if(intJr.empty())
+	    return actionsAxisymFudge(*pot, point, fd, Umin);
+
     coord::ProlSph coordsys(fd);
     const coord::PosProlSph pprol = coord::toPos<coord::Cyl, coord::ProlSph>(point, coordsys);
 
     // the third coordinate in the 3d interpolation grid is I3/I3max,
     // where I3max(E, Lz) is the maximum possible value of I3, computed from the radius of a shell orbit
 //    double Rshell = fmax(0, interpR.value(xi, chi)) * Rcirc;
-    double Rshell = pot->getRsh(E, fabs(Lz)/Lcirc, invPhi0);
     double PhiS  = interp.value(Rshell);
     double lamS  = pow_2(Rshell) + fd*fd;  // lambda(Rshell,z=0)
-    double I3max = fmax(0, E - PhiS - (Rshell>0 ? 0.5 * pow_2(Lz/Rshell) : 0) ) * lamS;
+    //double I3max = fmax(0, E - PhiS - (Rshell>0 ? 0.5 * pow_2(Lz/Rshell) : 0) ) * lamS;
 #if 0   // method L: take the potential at point (lambda,0)
     double PhiL  = interp.value(sqrt(pprol.lambda - coordsys.Delta2));
     double add   = pprol.lambda * (Phi - PhiL);
@@ -928,8 +981,8 @@ EXP Actions ActionFinderAxisymFudge::actions(const coord::PosVelCyl& point) cons
     double add   = lamS * (PhiN - PhiS) + fabs(pprol.nu) * (Phi - PhiN);
 #endif
     // Y is (L^2 - L_z^2 + Delta^2 v_z^2)
-    double Y  = pow_2(point.z*point.vphi) + pow_2(point.R*point.vz-point.z*point.vR) + pow_2(fd*point.vz);
-    double I3 = 0.5*Y + add;
+    //double Y  = pow_2(point.z*point.vphi) + pow_2(point.R*point.vz-point.z*point.vR) + pow_2(fd*point.vz);
+    //double I3 = 0.5*Y + add;
 
     // step 3. obtain the interpolated values of (suitably scaled) Jr and Jz
     // as functions of three scaled variables:  E, chi, psi = s(

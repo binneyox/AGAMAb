@@ -28,6 +28,7 @@
 #include "potential_base.h"
 #include "potential_utils.h"
 #include "actions_base.h"
+#include "smart.h"
 
 namespace potential{
 
@@ -193,35 +194,39 @@ class EXP ShellInterpolator{
 */
 class EXP  PolarInterpolator{
 	private:
-		math::LinearInterpolator interpI3, interpFD;
+		math::LinearInterpolator interpI3, interpFD, interpUmin;
 		std::vector<double> coeffsJz;
 		math::ScalingSemiInf Sc;
 	public:
 		PolarInterpolator(){}
 		PolarInterpolator(const BasePotential&, const PtrShellInterpolator);
-		PolarInterpolator(const std::vector<double>& gridEscaled, const std::vector<double>& gridI3,
+/*		PolarInterpolator(const std::vector<double>& gridEscaled, const std::vector<double>& gridI3,
 				  const std::vector<double>& gridFD, const std::vector<double>& gridJfScaled,
 				  const std::vector<double>& gridJz) :
 		    interpI3(gridEscaled,gridI3), interpFD(gridEscaled,gridFD),
-		    coeffsJz(math::fitPoly(15,gridJfScaled,gridJz)) {}
-		void getDeltaI3(const double E,const double invPhi0,
-			       double& Delta, double& I3) const{
+		    coeffsJz(math::fitPoly(15,gridJfScaled,gridJz)) {}*/
+		void getFDI3critUmin(const double E,const double invPhi0,
+			       double& Delta, double& I3, double& Umin) const{
 			double scaledE = math::clip(scaleE(E, invPhi0),
 				interpFD.xmin(), interpFD.xmax());
 			Delta = interpFD.value(scaledE);
-			scaledE = math::clip(scaleE(E, invPhi0),
-				interpI3.xmin(), interpI3.xmax());
 			I3 = interpI3.value(scaledE);
+			Umin = interpUmin.value(scaledE);
 		}			
-		double getI3(const double E,const double invPhi0) const{
+		double getI3crit(const double E,const double invPhi0) const{
 			const double scaledE = math::clip(scaleE(E, invPhi0),
 				interpI3.xmin(), interpI3.xmax());
 			return interpI3.value(scaledE);
 		}
-		double getDelta(const double E,const double invPhi0) const{
+		double getFDcrit(const double E,const double invPhi0) const{
 			const double scaledE = math::clip(scaleE(E, invPhi0),
 				interpFD.xmin(), interpFD.xmax());
 			return interpFD.value(scaledE);
+		}
+		double getUmin(const double E,const double invPhi0) const{
+			const double scaledE = math::clip(scaleE(E, invPhi0),
+				interpUmin.xmin(), interpUmin.xmax());
+			return interpUmin.value(scaledE);
 		}
 		double getJz(const double Jf) const{
 			return math::evalPoly(coeffsJz, scale(Sc,Jf));

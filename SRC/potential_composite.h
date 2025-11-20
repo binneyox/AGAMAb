@@ -101,24 +101,32 @@ class EXP CompositeCyl: public BasePotentialCyl{
 				return 0;
 			}
 		}
-		virtual void getBestDeltaI3(const double E, const double invPhi0,
-					    double& Delta, double& I3) const{
+		virtual void getFDI3critUmin(const double E, const double invPhi0,
+					    double& Delta, double& I3, double& Umin) const{
 			if(PtrPolarI)
-				PtrPolarI->getDeltaI3(E, invPhi0, Delta, I3);
+				PtrPolarI->getFDI3critUmin(E, invPhi0, Delta, I3, Umin);
 			else
 				printf("Error PtrPolarI is NULL\n");
 		}
-		virtual double getBestDelta(const double E, const double invPhi0) const{
+		virtual double getFDcrit(const double E, const double invPhi0) const{
 			if(PtrPolarI)
-				return PtrPolarI->getDelta(E, invPhi0);
+				return PtrPolarI->getFDcrit(E, invPhi0);
 			else{
 				printf("Error PtrPolarI is NULL\n");
 				return 0;
 			}
 		}
-		virtual double getI3(const double E, const double invPhi0) const{
+		virtual double getI3crit(const double E, const double invPhi0) const{
 			if(PtrPolarI)
-				return PtrPolarI->getI3(E, invPhi0);
+				return PtrPolarI->getI3crit(E, invPhi0);
+			else{
+				printf("Error PtrPolarI is NULL\n");
+				return 0;
+			}
+		}
+		virtual double getUmin(const double E, const double invPhi0) const{
+			if(PtrPolarI)
+				return PtrPolarI->getUmin(E, invPhi0);
 			else{
 				printf("Error PtrPolarI is NULL\n");
 				return 0;

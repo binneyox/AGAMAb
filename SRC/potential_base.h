@@ -134,46 +134,50 @@ public:
     
 //Now a series of functions that are defined only for CompCyl
     virtual void getRshDelta(const double, const double, double&, double&) const{
-	    printf("Error getRshDelta(L) not overloaded\n");
+	    printf("Error getRshDelta(L,Xi) not overloaded\n");
     }
     virtual void getRshDelta(const double, const double, const double,
 			     double&, double&) const{
-	    printf("Error getRshDelta(E) not overloaded\n");
+	    printf("Error getRshDelta(E,Xi) not overloaded\n");
     }
     virtual double getRsh(const double, const double) const{
-	    printf("Error getRsh(L) not overloaded\n");
+	    printf("Error getRsh(L,Xi) not overloaded\n");
 	    return 0;
     }
     virtual double getRsh(const double, const double, const double) const{
-	    printf("Error getRsh(E) not overloaded\n");
+	    printf("Error getRsh(E,Xi) not overloaded\n");
 	    return 0;
     }
     virtual double getDelta(const double, const double) const{
-	    printf("Error getDelta(L) not overloaded\n");
+	    printf("Error getDelta(L,Xi) not overloaded\n");
 	    return 0;
     }
     virtual double getDelta(const double, const double, const double) const{
-	    printf("Error getDelta(E) not overloaded\n");
+	    printf("Error getDelta(E,Xi) not overloaded\n");
 	    return 0;
     }
     virtual double getJzcrit(const double Jf) const{
 	    printf("Error getJzcrit not overloaded\n");
 	    return 0;
     }
-    virtual void getBestDeltaI3(const double, const double,
-				double&, double&) const{
-	    printf("Error getBestDeltaI3 not overloaded\n");
+    virtual void getFDI3critUmin(const double, const double,
+				double&, double&, double&) const{
+	    printf("Error getFDI3crit not overloaded\n");
     }
-    virtual double getBestDelta(const double, const double) const{
-	    printf("Error getBestDelta not overloaded\n");
+    virtual double getFDcrit(const double, const double) const{
+	    printf("Error getFDcrit not overloaded\n");
 	    return 0;
     }
-    virtual double getI3(const double E, const double) const{
-	    printf("Error getI3 not overloaded\n");
+    virtual double getI3crit(const double E, const double) const{
+	    printf("Error getI3crit not overloaded\n");
+	    return 0;
+    }
+    virtual double getUmin(const double E, const double) const{
+	    printf("Error getUmin not overloaded\n");
 	    return 0;
     }
     std::pair<double,double> getXiChi(const double E,const double Xip, const double invPhi0) const{
-	    printf("Error getI3 not overloaded\n");
+	    printf("Error getXiChi not overloaded\n");
 	    return std::make_pair(0,0);
     }
 

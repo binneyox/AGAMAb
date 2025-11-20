@@ -100,10 +100,9 @@ EXP ActionAngles actionAnglesAxisymStaeckel(
     \throw      std::invalid_argument exception if the potential is not axisymmetric.
 */
 EXP Actions actionsAxisymFudge(
-    const potential::BasePotential& potential, 
-    const coord::PosVelCyl& point,
-    double focalDistance);
-//    double lambda_dip = NAN);
+			       const potential::BasePotential& potential, 
+			       const coord::PosVelCyl& point,
+			       double focalDistance, double Umin=0);
 
 /** Find approximate actions and angles in a given axisymmetric potential, 
     using the Staeckel Fudge method.
@@ -118,8 +117,7 @@ EXP ActionAngles actionAnglesAxisymFudge(
     const potential::BasePotential& potential, 
     const coord::PosVelCyl& point, 
     double focalDistance,
-//    double lambda_dip=NAN,
-    Frequencies* freq=NULL);
+    Frequencies* freq=NULL, double Umin=0);
 
 ///@}
 /// \name  ------- Class interface to action/angle finders  -------
@@ -177,6 +175,9 @@ private:
     math::CubicSpline3d intJr, intJz;       ///< 3d interpolators for Jr and Jz as functions of (E,Lz,I3)
     potential::ShellInterpolator shellInterp;
 };
+
+EXP double getI3(const potential::BasePotential& potential, 
+	     const coord::PosVelCyl& point, const coord::ProlSph& coordsys);
 
 ///@}
 }  // namespace actions

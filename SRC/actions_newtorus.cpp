@@ -1274,79 +1274,22 @@ namespace actions {
 		}
 		return Hs;
 	}
-	TMfitter::TMfitter(const potential::BasePotential& pot,
-		std::vector<std::pair<coord::PosMomCyl, double> >& _traj,
-		double _pphi) : pphi(_pphi),traj(_traj) {
-		xmin = 1e6; ymax = 0;
-		double ymin = 1e6, xmax = 0, pxmin = 1e6, pxmax = 0, pymin = 1e6, pymax = 0;
-		for (int i = 1; i < traj.size(); i++) {//Find where crosses axes
-			if (traj[i].first.R * traj[i - 1].first.R <= 0) {//x axis
-				double f = traj[i].first.R / (traj[i].first.R - traj[i - 1].first.R);
-				double y = (1 - f) * traj[i].first.z + f * traj[i - 1].first.z;
-				double px = (1 - f) * traj[i].first.pR + f * traj[i - 1].first.pR;
-				ymin = fmin(ymin, fabs(y)); ymax = fmax(ymax, fabs(y));
-				pxmin = fmin(pxmin, fabs(px)); pxmax = fmax(pxmax, fabs(px));
-			}
-			if (traj[i].first.z * traj[i - 1].first.z <= 0) {//z axis
-				double f = traj[i].first.z / (traj[i].first.z - traj[i - 1].first.z);
-				double x = (1 - f) * traj[i].first.R + f * traj[i - 1].first.R;
-				double py = (1 - f) * traj[i].first.pz + f * traj[i - 1].first.pz;
-				xmin = fmin(xmin, fabs(x)); xmax = fmax(xmax, fabs(x));
-				pymin = fmin(pymin, fabs(py)); pymax = fmax(pymax, fabs(py));
-			}
-		}
-		//xbar, ybar estimated axes of underlying loop orbit
-		xbar = .5 * (xmin + xmax); double ybar = .5 * (ymin + ymax);
-		Delta2 = (ybar * ybar - xbar * xbar);
-		double Phi; coord::GradCyl grad;
-		pot.eval(coord::PosCyl(0, ymax, 0), &Phi, &grad);
-		Frat = grad.dz;
-		pot.eval(coord::PosCyl(xmin, 0, 0), &Phi, &grad);
-		Frat /= grad.dR;
-		double pxbar = pphi > 0 ? -.5 * (pxmin + pxmax) : .5 * (pxmin + pxmax),
-			pybar = pphi > 0 ? .5 * (pymin + pymax) : -.5 * (pymin + pymax);
-		aPT = 0.25 * pphi * (1 / (ybar * pybar) + 1 / (xbar * pxbar));
-		bPT = 0.125 * pphi * (1 / (ybar * pybar) - 1 / (xbar * pxbar)) - 0.25;
-		printf("xbar %f ybar %f ", xbar, ybar);
-		printf("pxbar %f pybar %f\n", pxbar, pybar);
-		printf("Delta2 %f Frat %f a %f b %f\n", Delta2, Frat, aPT, bPT);
-	}
-	//Function with root where we have the right force ratio
-	double TMfitter::value(double Js) const {
-		double g2 = pow((fabs(pphi) + sqrt(pphi * pphi + 4 * Js * Js)) / (2 * Js), 4) - 1;
-		double bIso = xbar / sqrt(g2);
-		double ap = sqrt(ymax * ymax + bIso * bIso), am = sqrt(xmin * xmin + bIso * bIso);
-		//	printf("Js pphi g2 b %f %g %g %g\n",Js,pphi,g2,b);
-		return Frat - (ymax * am * pow_2(bIso + am)) / (xmin * ap * pow_2(bIso + ap));
-	}
-	//Solve for Js and bIso
-	std::vector<double> TMfitter::fitTM() const {
-		const double Jsmin = .01, Jsmax = 10;
-		double Js = math::findRoot(*this, Jsmin, Jsmax, 1e-5);
-		double g2 = (pow((fabs(pphi) + sqrt(pphi * pphi + 4 * Js * Js)) / (2 * Js), 4) - 1);
-		double bIso = xbar / sqrt(g2);
-		std::vector<double> ans(5);
-		ans[0] = sqrt(Delta2); ans[1] = aPT; ans[2] = bPT;
-		ans[3] = Js; ans[4] = bIso;
-		return ans;
-	}
 
 	TorusGenerator::TorusGenerator(const potential::BasePotential& _pot,
 		const double _tol, std::string _logfname) :
 		pot(_pot), defaultTol(_tol),
 	    invPhi0(1. / _pot.value(coord::PosCyl(0, 0, 0))),
 	    logfname(_logfname), tmax(250) {
-		printf("inside TG\n");
 		FILE* logfile;
 		if (fopen_s(&logfile, logfname.c_str(), "w"))
 			printf("I can't open logfile %s\n", logfname.c_str());
 		fclose(logfile);
-		printf("Preparing TorusGenerator...");
+//		printf("Preparing TorusGenerator...");
 		math::QuinticSpline2d interpEJr;
 		//We use mapHJr defined in actions_spherical to create
 		//2d splines relating E, Jr, L
 		mapHJr(pot,interpEJr,interpJrE);
-		printf("done\n");
+//		printf("done\n");
 	}
 	double TorusGenerator::Hamilton(const Torus& T, const potential::BasePotential* ePot, const Angles& theta)
 	{
@@ -1440,7 +1383,8 @@ namespace actions {
 					   std::vector<double>& params,
 					   const Actions& J, double& Jscale,
 					   double& freqScale, double& Rsh,
-					   ToyPotType ToyMapType, FILE* logfile) const {
+					   ToyPotType ToyMapType, FILE* logfile,
+					  const int Nn, const int Nnr) const {
 		const double L = fabs(J.Jphi) + J.Jz, Xi = J.Jz / L, Xip=fabs(J.Jphi)/L;
 		const double Jtot = L + J.Jr;
 		Jscale = J.Jr + J.Jz;
@@ -1483,8 +1427,8 @@ namespace actions {
 		double Rmin, Rmax;
 		potential::findPlanarOrbitExtent(pot, E1, J.Jphi, Rmin, Rmax);
 		freqScale = potential::v_circ(pot, Rsh) / Rsh; //frequency scale set
-		int Nn = 5;
-		int Nnr = 5;
+//		int Nn = 5;
+//		int Nnr = 5;
 		double tolerance = 1e-9;//controls optimisation
 		PtrToyMap TM;
 		if (ToyMapType == ToyPotType::Is) {
@@ -1571,7 +1515,8 @@ namespace actions {
 		return Torus(J, freqs, G, ptrTM, Hbar, negJr, negJz);
 	}
 
-	Torus TorusGenerator::fitTorus(const Actions& J, const double tighten, const ToyPotType ToyMapType) const {
+	Torus TorusGenerator::fitTorus(const Actions& J, const double tighten,
+				       const ToyPotType ToyMapType) const {
 		FILE* logfile; fopen_s(&logfile, logfname.c_str(), "a");
 		fprintf(logfile, "\nActions (%f %f %f)\n", J.Jr, J.Jz, J.Jphi);
 		int nrmax = 6, nzmax = 4;// nzmax must be even
@@ -1600,7 +1545,7 @@ namespace actions {
 				int numIter = math::nonlinearMultiFit(TF, &params[0], tolerance, maxNumIter, &params[0], &Hdisp);
 				Hdisp = sqrt(Hdisp);
 				fprintf(logfile, "%d terms %d points -> dH %7.3e",
-					GFFS.numTerms(), GFFS.numPoints(), Hdisp);
+					  GFFS.numTerms(), GFFS.numPoints(), Hdisp);
 				rep.push_back(Hdisp);
 				if (NANfrac + NANbar > 0)
 					fprintf(logfile, " NANfrac %f NANbar %f\n", NANfrac, NANbar);
@@ -1634,7 +1579,86 @@ namespace actions {
 		printf("Hdisp %e after %d expansions\n", Hdisp, Loop);
 		if (!converged) {
 			fprintf(logfile, "\nfitTorus failed to converge: %7.3e vs %7.3e target. ",
-				Hdisp, Htarget);
+				  Hdisp, Htarget);
+			fprintf(logfile, "%zd terms", indices.size());
+			fprintf(logfile, "\nNANfracs: %f %f, resids:\n", NANfrac, NANbar);
+			for (int i = 0; i < rep.size(); i++) fprintf(logfile, "%7.2e ", rep[i]); printf("\n");
+		}
+		torusFitter TF(J, pot, freqScale, ptrTM, GFFS);
+		Frequencies freqs;
+		GenFncDerivs dPdJ;
+		bool negJr,negJz;
+		Hdisp = TF.fitAngleMap(&params[0], Hbar, freqs, dPdJ,negJr,negJz);
+		params.resize(indices.size()); dPdJ.resize(indices.size());
+		GenFnc G(indices, params, dPdJ);
+		fclose(logfile);
+		return Torus(J, freqs, G, ptrTM, Hbar, negJr, negJz);
+	}
+	Torus TorusGenerator::fitTorusNoFourier(const Actions& J, const double tighten,
+				       const ToyPotType ToyMapType) const {
+		FILE* logfile; fopen_s(&logfile, logfname.c_str(), "a");
+		fprintf(logfile, "\nActions (%f %f %f)\n", J.Jr, J.Jz, J.Jphi);
+		int nrmax = 6, nzmax = 4;// nzmax must be even
+		GenFncIndices indices = makeGridIndices(nrmax, nzmax);
+		std::vector<double> params(indices.size(), 0);
+		double timesr = 1.5, timesz = 1.5;
+		GenFncFit GFFS0(indices, timesr, timesz, J);
+		double Jscale, freqScale, Rsh;
+		PtrToyMap ptrTM(chooseTM(GFFS0, params, J, Jscale, freqScale, Rsh,
+					 ToyMapType, logfile, 0, 0));
+		double tolerance = 1e-9;//controls optimisation of the given Sn
+		double tol = defaultTol * tighten;
+		double Hbar, Hdisp = 1e20, Htarget = tol * freqScale * Jscale;
+		bool converged = false;
+		int Loop = 0, MaxLoop = 12, maxNumIter = 10;
+		bool stuck = false;
+		std::vector<double> rep;
+		do {
+			double Hdisp_old = Hdisp;
+			int numTerms_old = GFFS0.numTerms();
+			GenFncFit GFFS(indices, timesr, timesz, J);
+			torusFitter TF(J, pot, freqScale, ptrTM, GFFS);
+			if (std::isnan(Hdisp)) exit(0);
+			try {
+				NANbar = 0;
+				int numIter = math::nonlinearMultiFit(TF, &params[0], tolerance, maxNumIter, &params[0], &Hdisp);
+				Hdisp = sqrt(Hdisp);
+				fprintf(logfile, "%d terms %d points -> dH %7.3e",
+					  GFFS.numTerms(), GFFS.numPoints(), Hdisp);
+				rep.push_back(Hdisp);
+				if (NANfrac + NANbar > 0)
+					fprintf(logfile, " NANfrac %f NANbar %f\n", NANfrac, NANbar);
+				else
+					fprintf(logfile, "\n");
+				converged = (Hdisp < tol * freqScale * Jscale);
+			}
+			catch (std::exception& e) {
+				std::cout << "Exception in fitTorus: " << e.what() << '\n';
+			}
+			if(Loop>8)
+				stuck = fabs(1 - rep[Loop] / rep[Loop - 1]) < 1e-2 && GFFS.numTerms() > numTerms_old;
+			if (converged || (Loop > 1 && stuck)) break;
+			if (GFFS.numTerms() > numTerms_old && Hdisp > Hdisp_old) {//something wrong: back up 
+				indices = GFFS0.indices;
+				params.resize(indices.size());
+				Hdisp = Hdisp_old;
+				timesr *= 1.2; timesz *= 1.2;
+			}
+			else {
+				GFFS0 = GFFS;
+				indices = GFFS.expand(params);
+			}
+			Loop++;
+		} while (Loop < MaxLoop);
+		if(stuck){
+			printf("Quit early because Hvar not decreasing\n");
+			for(int i=0;i<Loop;i++) printf("%g ",rep[i]);
+		}
+		GenFncFit GFFS(indices, 2*timesr, 2*timesz, J);
+		printf("Hdisp %e after %d expansions\n", Hdisp, Loop);
+		if (!converged) {
+			fprintf(logfile, "\nfitTorus failed to converge: %7.3e vs %7.3e target. ",
+				  Hdisp, Htarget);
 			fprintf(logfile, "%zd terms", indices.size());
 			fprintf(logfile, "\nNANfracs: %f %f, resids:\n", NANfrac, NANbar);
 			for (int i = 0; i < rep.size(); i++) fprintf(logfile, "%7.2e ", rep[i]); printf("\n");

@@ -132,31 +132,13 @@ namespace actions {
 	EXP Torus InterpTorus(const double x, const Torus& T0, const Torus& T1);
 
 	/*
-	 * Class for fitting torus to an orbit
-	*/
-	class EXP TMfitter : public math::IFunctionNoDeriv {
-	private:
-		double pphi, Delta2, xmin, ymax, xbar, Frat, aPT, bPT;
-		std::vector<std::pair<coord::PosMomCyl, double> >& traj;
-	public:
-		TMfitter(const potential::BasePotential&,
-			std::vector<std::pair<coord::PosMomCyl, double> >&, double);
-		std::vector<double> fitTM() const;
-		virtual double value(double) const;
-		virtual unsigned int numVars() const { return 4; }
-		virtual unsigned int numValues() const { return 1; }
-	};
-	/*
 	 * Class for generators of tori.
 	*/
 	class EXP TorusGenerator {
 	private:
 		const potential::BasePotential& pot;
 		const double defaultTol, invPhi0;
-//		math::LinearInterpolator2d interpD; //for Delta values
-//		math::LinearInterpolator2d interpR; //for Rshell(L,Xi) values
 		math::QuinticSpline2d interpJrE;//Esc(Q,Y) for planar orbit, Q=log(Lz+Jr),Y=Lz/(Lz+Jr). Esc=log(1/Phi(0)-1/E)
-//		std::vector<double> JzcritSpl;// Jzcrit(Jfast)
 		std::string logfname;
 #ifdef TEST
 		/* Test_it compares analytic and numerical derivatives */
@@ -169,21 +151,25 @@ namespace actions {
 		 * of the residual H */
 		PerturbingHamiltonian get_pH(const Torus&,
 			int nf, bool ifp, const potential::BasePotential*);
-		//void setConsts(actions::Actions, double, double&, double&, double&, Isochrone&, coord::UVSph&) const;
-		//ToyMap chooseTM(actions::Actions, double&, double&, double&) const;
 		int tmax;// Max number of terms retained in residual H
 	public:
-//		potential::ShellInterpolator shellInterp;
-//		potential::PolarInterpolator polarInterp;
 		/* Creator of tori in given potential. GF deemed ok if
 		 * dispersion in H < tol*freqScale*Jtotal */
 		TorusGenerator(const potential::BasePotential& _pot,
-			const double _tol = 1e-9, std::string _logfname = "TG.log");
+			       const double _tol = 1e-9, std::string _logfname = "TG.log");
+		/* Fit toy map with as default 5 Fourier terms in each
+		 * coord*/ 
 		PtrToyMap chooseTM(GenFncFit&, std::vector<double>&, const Actions&,
-			double&, double&, double&, ToyPotType ToyMapType=ToyPotType::None, FILE* logfile = NULL) const;
-		Torus fitTorus(const Actions& J, const double tighten = 1, const ToyPotType ToyMapType=ToyPotType::None) const;
+				   double&, double&, double&, ToyPotType ToyMapType=ToyPotType::None,
+				   FILE* logfile = NULL, const int Nn=5, const int Nnr=5) const;
+		Torus fitTorus(const Actions& J, const double tighten = 1,
+			       const ToyPotType ToyMapType=ToyPotType::None) const;
+		/* Use point trans that has no Fourier series */
+		Torus fitTorusNoFourier(const Actions& J, const double tighten = 1,
+			       const ToyPotType ToyMapType=ToyPotType::None) const;
 		/* Fit a torus with all Sn=0 */
-		Torus fitBaseTorus(const Actions&, const double tighten = 1, const ToyPotType ToyMapType=ToyPotType::None) const;
+		Torus fitBaseTorus(const Actions&, const double tighten = 1,
+				   const ToyPotType ToyMapType=ToyPotType::None) const;
 		/* Build a torus with all Sn=0 around the given ToyMap */
 		Torus giveBaseTorus(const Actions&, const PtrToyMap&) const;
 		/* fitFrom uses given TM & varies Sn starting from given values

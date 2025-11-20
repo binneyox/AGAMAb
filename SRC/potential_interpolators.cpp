@@ -1,4 +1,5 @@
 #include "potential_interpolators.h"
+#include "actions_staeckel.h"
 
 /// number of sampling points for a shell orbit (equally spaced in time)
 static const unsigned int NUM_STEPS_TRAJ = 64;
@@ -41,6 +42,7 @@ class EXP FDfinder{
 
 EXP math::Matrix<double> FDfinder::derivs(double u,double Delta, double& d2p2du2,
 					  double* p2,double* p2prime){
+	//We assume v=M_Pi/2
 	double sh=sinh(u), ch=cosh(u), u0=asinh(Rsh/Delta);
 	double R=Delta*sh, R2=R*R, Delta2=pow_2(Delta);
 	double P;
@@ -67,13 +69,14 @@ EXP math::Matrix<double> FDfinder::derivs(double u,double Delta, double& d2p2du2
 	return M;
 }
 
-EXP double FDfinder::bestFD(double& umin, double& d2p2du2){//implements N-R search for p_u^2=dp_u^2/du=0
-	double u=asinh(.8*Rsh/Delta0), u0=asinh(Rsh/Delta0), pu0=vR*Delta0*cosh(u0);
-	double p2=1, p2prime=1, Delta=Delta0, fac=1;
+//implements N-R search for umin and Delta s.t.  p_u^2=dp_u^2/du=0
+EXP double FDfinder::bestFD(double& Umin, double& d2p2du2){
+	double u=asinh(.8*Rsh/Delta0);
+	double det, p2=1, p2prime=1, Delta=Delta0, fac=1;
 	int i=0;
 	while(i<20 && u>0 && (fabs(p2)>1e-4 || fabs(p2prime)>1e-4)){
 		math::Matrix<double> M0(derivs(u,Delta,d2p2du2,&p2,&p2prime));
-		double det=M0(0,0)*M0(1,1)-M0(1,0)*M0(0,1);
+		det=M0(0,0)*M0(1,1)-M0(1,0)*M0(0,1);
 		double dY0 = ( M0(1,1)*p2-M0(0,1)*p2prime)/det;
 		double dY1 = (-M0(1,0)*p2+M0(0,0)*p2prime)/det;
 		//printf("%d %g %g %g %g %g\n",i,det,p2,p2prime,u,Delta);
@@ -86,7 +89,8 @@ EXP double FDfinder::bestFD(double& umin, double& d2p2du2){//implements N-R sear
 		u-=dY0; Delta-=dY1;
 		i++;
 	}
-	umin=u;
+	Umin=u;
+	if(i>16) printf("(%g %g %g)\n",p2,p2prime,det);
 	return Delta;
 }	
 
@@ -205,9 +209,9 @@ double Area(std::vector<double> x, std::vector<double> y, const double Rsh,
 		I +=  yn[i] * (xn[i + 1] - xn[i - 1]);
 	I *= .5;
 	for(int i=1; i<n; i++){
-		if((Rsh-x[i-1]) * (x[i]-Rsh) < 0) continue;
-		double f = (Rsh-x[i-1]) / (x[i]-x[i-1]);
-		ysh = (1-f)*y[i-1] + f*y[i];
+		if((Rsh-xn[i-1]) * (xn[i]-Rsh) < 0) continue;
+		double f = (Rsh-xn[i-1]) / (xn[i]-xn[i-1]);
+		ysh = (1-f)*yn[i-1] + f*yn[i];
 	}
 	x2max = xn[xn.size()-1];
 	ymv2 = yn[yn.size()-1];
@@ -524,6 +528,7 @@ EXP ShellInterpolator::ShellInterpolator(const BasePotential& pot){
 	interpDL = math::LinearInterpolator2d(gridLscaled, gridXiscaled, grid2dDL);
 	interpRL = math::LinearInterpolator2d(gridLscaled, gridXiscaled, grid2dRL);
 }
+
 /* The main job of PolarInterpolator is to hold the curve Jz(Jf) along
  * which the box/loop transition lies. In adition it holds the values
  * of Delta(E) that cause the I3 centrifugal barrier to vanish on this
@@ -545,7 +550,7 @@ EXP PolarInterpolator::PolarInterpolator(const potential::BasePotential& pot,
 	}
 	math::ScalingSemiInf Sc;
 	std::vector<double> gridJr(sizeE), gridJz(sizeE), gridJfScaled(sizeE),
-	gridI3, gridFD;
+	gridI3, gridFD, gridUmin;
 	if (potential::isSpherical(pot)|| std::isnan(Phi0) || std::isinf(Phi0)) {
 		double Jr0 = 0;
 		for (int i = 0; i < sizeE; i++) {
@@ -563,22 +568,20 @@ EXP PolarInterpolator::PolarInterpolator(const potential::BasePotential& pot,
 		double E0, z0;
 		double b;//z=b(E-E0)+z0
 		int i = 0;
-		double Rsh, vR, umin, d2pu2du2;
+		double Rsh, vR, Umin, d2pu2du2;
 		while(i<sizeE) {
-			Rsh = PtrShellI->getRsh(gridE[i], 0.5, 1/Phi0) * R_circ(pot, gridE[i]);
-			;
+			Rsh = PtrShellI->getRsh(gridE[i], 0, 1/Phi0) * R_circ(pot, gridE[i]);
+			double FD = PtrShellI->getDelta(gridE[i], 0, 1/Phi0);
 			if (gridE[i] / Phi0 > 0.2 && !interp) {
 				actions::Actions Jcrit = BoxLoopTrAct(pot, gridE[i], Rsh, vR);
-				double Delta0 = PtrShellI->getDelta(gridE[i], 0, 1/Phi0);
-				FDfinder FDf(gridE[i], Rsh, vR, Delta0, pot);
-				gridFD.push_back(FDf.bestFD(umin, d2pu2du2));
-				const coord::ProlSph coordsys(gridFD[i]);
-				coord::UVSph cs(gridFD[i]);
-				double vz2 = 2*(gridE[i]-pot.value(coord::PosCyl(Rsh,0,0)))-pow_2(vR); 
-				double vz = vz2>0? sqrt(vz2) : 0;
+				FDfinder FDf(gridE[i], Rsh, vR, FD, pot);
+				gridFD.push_back(FDf.bestFD(Umin, d2pu2du2));
+				gridUmin.push_back(Umin);
+				const coord::ProlSph coordsys(gridFD.back());
+				double vzsq = 2*(gridE[i] - pot.value(coord::PosCyl(Rsh,0,0))) - pow_2(vR); 
+				double vz = vzsq>0? sqrt(vzsq) : 0;
 				coord::PosVelCyl point(Rsh,0,0,vR,vz,0);
-				coord::PosMomUVSph uvp(coord::toPosMom(coord::PosMomCyl(Rsh,0,0,vR,vz,0),cs));
-				gridI3.push_back(gridE[i]*pow_2(Rsh/cs.Delta) - .5*pow_2(uvp.pu)/cs.Delta2);
+				gridI3.push_back(actions::getI3(pot, point, coordsys));
 				gridJr[i] = Jcrit.Jr; gridJz[i] = Jcrit.Jz;
 				if ((i > N+1) && (1-gridE[i]/Phi0) > 1e-4) {
 					if (gridJz[i] < gridJz[i-1]) {
@@ -620,11 +623,13 @@ EXP PolarInterpolator::PolarInterpolator(const potential::BasePotential& pot,
 			if(i>=sizeFD){
 				gridFD.push_back(0);
 				gridI3.push_back(0);
+				gridUmin.push_back(0);
 			}
 		}
 	}
 	interpI3 = math::LinearInterpolator(gridEscaled, gridI3);
 	interpFD = math::LinearInterpolator(gridEscaled, gridFD);
+	interpUmin=math::LinearInterpolator(gridEscaled, gridUmin);
 	coeffsJz = math::fitPoly(15, gridJfScaled, gridJz);
 }
 
