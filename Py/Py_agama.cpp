@@ -429,7 +429,7 @@ PYBIND11_MODULE(Py_agama, m) {
         .def("name",&potential::BasePotential::name)
         .def("value",&potential::BasePotential::value<coord::Car>)
         .def("value",&potential::BasePotential::value<coord::Cyl>)
-        .def("getJzcrit",&,&potential::BasePotential::getJzcrit,"Given Jf=2*Jr+Jz gives the Jz at which the box loop orbit transition occurs")
+        .def("getJzcrit",&potential::BasePotential::getJzcrit,"Given Jf=2*Jr+Jz gives the Jz at which the box loop orbit transition occurs")
         .def("eval",[](potential::BasePotential &self, coord::PosCar x,bool pot=false,bool der=false,bool hess=false)
         ->py::object{
             if(!pot&&!der&&!hess)pot=true;
