@@ -156,7 +156,7 @@ namespace actions {
 		/* Creator of tori in given potential. GF deemed ok if
 		 * dispersion in H < tol*freqScale*Jtotal */
 		TorusGenerator(const potential::BasePotential& _pot,
-			       const double _tol = 1e-9, std::string _logfname = "TG.log");
+			       const double _tol = 1e-9, std::string _logfname = "");
 		/* Fit toy map with as default 5 Fourier terms in each
 		 * coord*/ 
 		PtrToyMap chooseTM(GenFncFit&, std::vector<double>&, const Actions&,

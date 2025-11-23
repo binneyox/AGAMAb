@@ -23,7 +23,10 @@
 
 namespace potential {
 
-/** Create an instance of density according to the parameters contained in the key-value map.
+/* Takes in pot withut interpolators and return one with them */
+EXP PtrPotential wrapPotential(const PtrPotential&);
+
+  /** Create an instance of density according to the parameters contained in the key-value map.
     \param[in] params is the list of parameters ("density=..." is a required one);
     \param[in] converter is the unit converter for transforming the dimensional quantities 
     in parameters (such as mass and radii) into internal units; can be a trivial converter.

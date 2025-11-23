@@ -174,6 +174,15 @@ const char* getCoefFileExtension(PotentialType type)
 }
 } // internal namespace
 
+/* Supply a potential with interpolators  */
+EXP PtrPotential wrapPotential(const PtrPotential& pot){
+	std::vector<PtrPotential> components;
+	components.push_back(pot);
+	PtrShellInterpolator PtrShellI(new ShellInterpolator(*pot));
+	PtrPolarInterpolator PtrPolarI(new PolarInterpolator(*pot, PtrShellI));
+	return PtrPotential(new CompositeCyl (components, PtrShellI, PtrPolarI));
+}
+
 // return the type of symmetry by its name, or ST_DEFAULT if unavailable
 coord::SymmetryType getSymmetryTypeByName(const std::string& symmetryName)
 {
@@ -764,8 +773,6 @@ PtrPotential readPotential(const std::string& fileName, const units::ExternalUni
 	    PtrShellInterpolator PtrShellI(new ShellInterpolator(*ptl));
 	    PtrPolarInterpolator PtrPolarI(new PolarInterpolator(*ptl, PtrShellI));
 	    return PtrPotential(new CompositeCyl (components, PtrShellI, PtrPolarI));
-	    //Here we could compute Shheel & Polar Interpolators
-	    //return PtrPotential(new CompositeCyl (components));
         }
     }
     throw std::runtime_error("readPotential: cannot find valid potential coefficients in file "+fileName);
@@ -1035,11 +1042,7 @@ PtrPotential createPotentialFromParticles(const AllParam& param,
 			   CylSpline::create(particles, param.symmetryType, param.mmax,
 					     param.gridSizeR, param.rmin, param.rmax,
 					     param.gridSizez, param.zmin, param.zmax);
-	PtrShellInterpolator PtrShellI(new ShellInterpolator(*ptl));
-	PtrPolarInterpolator PtrPolarI(new PolarInterpolator(*ptl, PtrShellI));
-	std::vector<PtrPotential> components;
-	components.push_back(ptl);
-	return PtrPotential(new CompositeCyl(components, PtrShellI, PtrPolarI));
+	return wrapPotential(ptl);
 	/*
     switch(param.potentialType) {
     case PT_MULTIPOLE:
@@ -1149,11 +1152,7 @@ PtrPotential createPotentialExpansion(const AllParam& param, const SourceType& s
 			   CylSpline::create(source, param.mmax,
 					     param.gridSizeR, param.rmin, param.rmax,
 					     param.gridSizez, param.zmin, param.zmax);
-	PtrShellInterpolator PtrShellI(new ShellInterpolator(*ptl));
-	PtrPolarInterpolator PtrPolarI(new PolarInterpolator(*ptl, PtrShellI));
-	std::vector<PtrPotential> components;
-	components.push_back(ptl);
-	return PtrPotential(new CompositeCyl(components, PtrShellI, PtrPolarI));
+	return wrapPotential(ptl);
 
  /*   switch(param.potentialType) {
     case PT_MULTIPOLE:

@@ -90,7 +90,7 @@ EXP double FDfinder::bestFD(double& Umin, double& d2p2du2){
 		i++;
 	}
 	Umin=u;
-	if(i>16) printf("(%g %g %g)\n",p2,p2prime,det);
+	if(i>16) printf("bestFD overrun at Rsh %g (%g %g %g)\n",Rsh,p2,p2prime,det);
 	return Delta;
 }	
 

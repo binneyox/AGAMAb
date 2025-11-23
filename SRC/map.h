@@ -12,6 +12,7 @@
 namespace actions{
 /* Class of maps from spherical polar coords to cylindrical polar
  * coords using confocal ellipsoidal coords. Used with isochrone HJ map
+ * BasePointTransform is defined in actions_base.h
  */
 class EXP PTIso: public BasePointTransform{
 	double t2v(const double theta, double* dvdt = NULL, double* d2vdt2 = NULL, 
@@ -80,12 +81,17 @@ class EXP PTIso: public BasePointTransform{
 		}
 		virtual int FourierSizer() const{return Nr;}
 		virtual int FourierSizez() const{return N;}
+		virtual double T2v(const double theta) const{
+			return t2v(theta,NULL,NULL,NULL,NULL);
+		}
+		virtual double Rn2r(const double r) const;
 };
 /* Class of maps between cylindrical polars for use with HO HJ map 
  */
 class EXP PTHarm : public BasePointTransform{
 	double zntov(const double zn, double* dvdt = NULL, double* d2vdt2 = NULL, 
-		     double *dvdz0=NULL, double* ddvdzdz0=NULL, double *dvdFC = NULL, double *ddvdtdFC = NULL) const;
+		     double *dvdz0=NULL, double* ddvdzdz0=NULL, double *dvdFC = NULL,
+		     double *ddvdtdFC = NULL) const;
 	double vtozn(const double v, double* dzdv = NULL) const;
 	public:
 		coord::UVSph cs;
@@ -145,6 +151,10 @@ class EXP PTHarm : public BasePointTransform{
 		virtual int numParams() const{return 3;}
 		virtual int FourierSizer() const{return Nr;}
 		virtual int FourierSizez() const{return N;}
+		virtual double T2v(const double theta) const{
+			return zntov(theta,NULL,NULL,NULL,NULL,NULL,NULL);
+		}
+		virtual double Rn2r(const double r) const;
 };
 
     EXP PTIso interpPTIso(double x, const PTIso&, const PTIso&);
@@ -202,7 +212,7 @@ class EXP PTHarm : public BasePointTransform{
 		    void getParams(double* Js=NULL,double* b=NULL) const{
 			    if(Js)*Js=Is.Js;
 			    if(b)*b=Is.b;
-		    };
+		    }
     };
 
     /* Class of toy maps that combine a point transformation with the

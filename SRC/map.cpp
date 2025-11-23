@@ -325,6 +325,9 @@ namespace actions{
 		double psi = v2t(v, &dtdv);
 		return coord::PosMomSph(r, psi, Rz.phi, pr / drdrn, ptheta / dtdv, Rz.pphi);
 	}
+	double PTIso::Rn2r(const double r) const{
+		return rn2r(r, paramsFr, sc, NULL);
+	}
 	coord::PosMomCyl PTHarm::revmap(const coord::PosMomCyl &Rz) const {
 		double R2 = pow_2(Rz.R), z2 = pow_2(Rz.z);
 		double B = R2 + z2 - pow_2(cs.Delta);
@@ -339,6 +342,9 @@ namespace actions{
 		double ptheta = r0 * cst * Rz.pR - rt * snt * Rz.pz;
 		double z = vtozn(v, &dzdv);
 		return coord::PosMomCyl(r, z, Rz.phi, pr / drdrn, ptheta / dzdv, Rz.pphi);
+	}
+	double PTHarm::Rn2r(const double r) const{
+		return r2rn(r, paramsFr, sc, NULL);
 	}
 	coord::PosMomCyl PTIso::map(const coord::PosMomSph &rp, coord::PosMomCyl* dRzdP,
             coord::PosMomCyl *dRzdFr,coord::PosMomCyl *dRzdFz) const {

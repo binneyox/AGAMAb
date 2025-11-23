@@ -1280,16 +1280,15 @@ namespace actions {
 		pot(_pot), defaultTol(_tol),
 	    invPhi0(1. / _pot.value(coord::PosCyl(0, 0, 0))),
 	    logfname(_logfname), tmax(250) {
-		FILE* logfile;
+		FILE* logfile = NULL;
+		if(logfname.size()>0){
 		if (fopen_s(&logfile, logfname.c_str(), "w"))
 			printf("I can't open logfile %s\n", logfname.c_str());
-		fclose(logfile);
-//		printf("Preparing TorusGenerator...");
-		math::QuinticSpline2d interpEJr;
+		fclose(logfile);}
 		//We use mapHJr defined in actions_spherical to create
 		//2d splines relating E, Jr, L
+		math::QuinticSpline2d interpEJr;
 		mapHJr(pot,interpEJr,interpJrE);
-//		printf("done\n");
 	}
 	double TorusGenerator::Hamilton(const Torus& T, const potential::BasePotential* ePot, const Angles& theta)
 	{
@@ -1385,7 +1384,7 @@ namespace actions {
 					   double& freqScale, double& Rsh,
 					   ToyPotType ToyMapType, FILE* logfile,
 					  const int Nn, const int Nnr) const {
-		const double L = fabs(J.Jphi) + J.Jz, Xi = J.Jz / L, Xip=fabs(J.Jphi)/L;
+		const double L = fabs(J.Jphi) + J.Jz, Xip=fabs(J.Jphi)/L;
 		const double Jtot = L + J.Jr;
 		Jscale = J.Jr + J.Jz;
 		double Delta; pot.getRshDelta(L, Xip, Rsh, Delta);
@@ -1517,8 +1516,11 @@ namespace actions {
 
 	Torus TorusGenerator::fitTorus(const Actions& J, const double tighten,
 				       const ToyPotType ToyMapType) const {
-		FILE* logfile; fopen_s(&logfile, logfname.c_str(), "a");
-		fprintf(logfile, "\nActions (%f %f %f)\n", J.Jr, J.Jz, J.Jphi);
+		FILE* logfile = NULL;
+		if(logfname.size()>0){
+			fopen_s(&logfile, logfname.c_str(), "a");
+			fprintf(logfile, "\nActions (%f %f %f)\n", J.Jr, J.Jz, J.Jphi);
+		}
 		int nrmax = 6, nzmax = 4;// nzmax must be even
 		GenFncIndices indices = makeGridIndices(nrmax, nzmax);
 		std::vector<double> params(indices.size(), 0);
@@ -1544,13 +1546,7 @@ namespace actions {
 				NANbar = 0;
 				int numIter = math::nonlinearMultiFit(TF, &params[0], tolerance, maxNumIter, &params[0], &Hdisp);
 				Hdisp = sqrt(Hdisp);
-				fprintf(logfile, "%d terms %d points -> dH %7.3e",
-					  GFFS.numTerms(), GFFS.numPoints(), Hdisp);
 				rep.push_back(Hdisp);
-				if (NANfrac + NANbar > 0)
-					fprintf(logfile, " NANfrac %f NANbar %f\n", NANfrac, NANbar);
-				else
-					fprintf(logfile, "\n");
 				converged = (Hdisp < tol * freqScale * Jscale);
 			}
 			catch (std::exception& e) {
@@ -1577,7 +1573,7 @@ namespace actions {
 		}
 		GenFncFit GFFS(indices, 2*timesr, 2*timesz, J);
 		printf("Hdisp %e after %d expansions\n", Hdisp, Loop);
-		if (!converged) {
+		if (!converged && logfile) {
 			fprintf(logfile, "\nfitTorus failed to converge: %7.3e vs %7.3e target. ",
 				  Hdisp, Htarget);
 			fprintf(logfile, "%zd terms", indices.size());
@@ -1591,13 +1587,16 @@ namespace actions {
 		Hdisp = TF.fitAngleMap(&params[0], Hbar, freqs, dPdJ,negJr,negJz);
 		params.resize(indices.size()); dPdJ.resize(indices.size());
 		GenFnc G(indices, params, dPdJ);
-		fclose(logfile);
+		if(logfile) fclose(logfile);
 		return Torus(J, freqs, G, ptrTM, Hbar, negJr, negJz);
 	}
 	Torus TorusGenerator::fitTorusNoFourier(const Actions& J, const double tighten,
 				       const ToyPotType ToyMapType) const {
-		FILE* logfile; fopen_s(&logfile, logfname.c_str(), "a");
-		fprintf(logfile, "\nActions (%f %f %f)\n", J.Jr, J.Jz, J.Jphi);
+		FILE* logfile = NULL;
+		if(logfname.size()>0){
+			fopen_s(&logfile, logfname.c_str(), "a");
+			fprintf(logfile, "\nActions (%f %f %f)\n", J.Jr, J.Jz, J.Jphi);
+		}
 		int nrmax = 6, nzmax = 4;// nzmax must be even
 		GenFncIndices indices = makeGridIndices(nrmax, nzmax);
 		std::vector<double> params(indices.size(), 0);
@@ -1623,13 +1622,7 @@ namespace actions {
 				NANbar = 0;
 				int numIter = math::nonlinearMultiFit(TF, &params[0], tolerance, maxNumIter, &params[0], &Hdisp);
 				Hdisp = sqrt(Hdisp);
-				fprintf(logfile, "%d terms %d points -> dH %7.3e",
-					  GFFS.numTerms(), GFFS.numPoints(), Hdisp);
 				rep.push_back(Hdisp);
-				if (NANfrac + NANbar > 0)
-					fprintf(logfile, " NANfrac %f NANbar %f\n", NANfrac, NANbar);
-				else
-					fprintf(logfile, "\n");
 				converged = (Hdisp < tol * freqScale * Jscale);
 			}
 			catch (std::exception& e) {
@@ -1656,7 +1649,7 @@ namespace actions {
 		}
 		GenFncFit GFFS(indices, 2*timesr, 2*timesz, J);
 		printf("Hdisp %e after %d expansions\n", Hdisp, Loop);
-		if (!converged) {
+		if (!converged && logfile) {
 			fprintf(logfile, "\nfitTorus failed to converge: %7.3e vs %7.3e target. ",
 				  Hdisp, Htarget);
 			fprintf(logfile, "%zd terms", indices.size());
@@ -1670,13 +1663,16 @@ namespace actions {
 		Hdisp = TF.fitAngleMap(&params[0], Hbar, freqs, dPdJ,negJr,negJz);
 		params.resize(indices.size()); dPdJ.resize(indices.size());
 		GenFnc G(indices, params, dPdJ);
-		fclose(logfile);
+		if(logfile) fclose(logfile);
 		return Torus(J, freqs, G, ptrTM, Hbar, negJr, negJz);
 	}
 
 	Torus TorusGenerator::fitBaseTorus(const Actions& J, const double tighten, const ToyPotType ToyMapType) const {
-		FILE* logfile; fopen_s(&logfile, logfname.c_str(), "a");
-		fprintf(logfile, "\nActions (%f %f %f)\n", J.Jr, J.Jz, J.Jphi);
+		FILE* logfile = NULL;
+		if(logfname.size()>0){
+			fopen_s(&logfile, logfname.c_str(), "a");
+			fprintf(logfile, "\nActions (%f %f %f)\n", J.Jr, J.Jz, J.Jphi);
+		}
 		int nrmax = 2, nzmax = 6;// nzmax must be even
 		GenFncIndices indices = makeGridIndices(nrmax, nzmax);
 		std::vector<double> params(indices.size(), 0);
@@ -1684,7 +1680,7 @@ namespace actions {
 		GenFncFit GFFS0(indices, 1, 1, J);
 		double Jscale, freqScale, Rsh;
 		PtrToyMap ptrTM(chooseTM(GFFS0, params, J, Jscale, freqScale, Rsh,ToyMapType));
-		fclose(logfile);
+		if(logfile) fclose(logfile);
 		return giveBaseTorus(J, ptrTM);
 	}
 

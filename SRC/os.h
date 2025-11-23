@@ -1,5 +1,3 @@
-//To get visual studio to export symbols from .dll library
-
 //If have visual studio export symbols from .dll library
 #ifdef _MSC_VER
 #define EXP __declspec(dllexport)
