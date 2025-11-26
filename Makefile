@@ -67,4 +67,4 @@ DEPENDS = $(patsubst %.cpp,$(OBJDIR)/%.d,$(SOURCES))
 COMPILE_FLAGS_LIB += -MMD -MP
 -include $(DEPENDS)
 
-.PHONY: clean test lib doxy nemo amuse
+.PHONY: clean lib nemo amuse

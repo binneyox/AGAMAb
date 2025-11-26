@@ -16,15 +16,15 @@ TESTEXE = exe/$(TESTEXE:  = exe/)
 COMPILE_FLAGS_ALL = $(COMPILE_FLAGS_ALL) -I$(SRCDIR)
 
 # this is the default target (build all), if make is launched without parameters
-all:  $(OBJDIR) $(EXEDIR) lib $(TESTEXE)
+all: $(OBJDIR) $(EXEDIR) lib $(TESTEXE)
 
 # one may recompile just the library by running 'make lib'
-lib:  $(LIBNAME_STATIC) $(LIBNAME_SHARED)
+lib: $(LIBNAME_STATIC) $(LIBNAME_SHARED)
 
-$(LIBNAME_STATIC):  $(OBJECTS) Makefile.msvc Makefile.local Makefile.list
+$(LIBNAME_STATIC): $(OBJECTS) Makefile Makefile.local Makefile.list
 	lib.exe $(OBJECTS) /out:$(LIBNAME_STATIC)
 
-$(LIBNAME_SHARED):  $(OBJECTS) Makefile.msvc Makefile.local Makefile.list
+$(LIBNAME_SHARED): $(OBJECTS) Makefile Makefile.local Makefile.list
 	link.exe $(OBJECTS) $(LINK_FLAGS_ALL) $(LINK_FLAGS_LIB) $(LINK_FLAGS_LIB_AND_EXE_STATIC) /dll /out:$(LIBNAME_SHARED) /implib:Py_agama_pyd.lib
 	del Py_agama_pyd.lib
 	del Py_agama_pyd.exp
@@ -33,6 +33,9 @@ $(TESTEXE): $(LIBNAME_STATIC) Makefile.local
 
 {src}.cpp{obj}.obj:
 	$(CC) $(COMPILE_FLAGS_ALL) $(COMPILE_FLAGS_LIB) -c $< -Foobj/
+
+{tests}.cpp{exe}.exe:
+	$(CC) -Fe: "$@" -Foobj/tmp.obj "$<" $(COMPILE_FLAGS_ALL) /link $(LINK_FLAGS_LIB_AND_EXE_STATIC) $(LIBNAME_STATIC)
 
 $(OBJDIR):
 	mkdir $(OBJDIR)

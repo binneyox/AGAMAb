@@ -13,10 +13,70 @@ A modification of this script that creates a self-consistent three-component mod
 This example is the Python counterpart of tests/example_self_consistent_model.cpp
 """
 import agama as ag
-import numpy, sys, os
+import numpy, sys, os, bisect
 intUnits=ag.IntUnits(ag.Kpc, ag.Myr)
 extUnits=ag.ExtUnits(intUnits, 1.*ag.Kpc, 1.*ag.kms, 1.*ag.Msun)
 solarRadius=0
+#1d Bspline interpolator used in velocity profile
+class Bspline:
+    def __init__(self,t,N):
+        self.t=t.copy()
+        self.N=N
+        self.size=len(t)
+        self.numcomp=len(t)+N-1
+    def interpolate(self,x,A):
+        if(len(A)!=self.numcomp):
+            print("wrong size of amplitude")
+            exit()
+        k=bisect.bisect_left(self.t,x)-1
+        if(k>=self.size or k<0):
+            if(x<self.t[0]):
+                return self.t[0]
+            else:
+                return self.t[self.size-1]
+        B=numpy.zeros(self.N+1)
+        B[self.N]=1
+        for p in range(1,self.N+1):
+            Bpr=0
+            for i in range(k,k-p-1,-1):
+                t0=self.t[self.size-1]
+                t1=self.t[self.size-1]
+                t2=self.t[self.size-1]
+                t3=self.t[self.size-1]
+                if(i<0):
+                    t0=self.t[0]
+                else:
+                    t0=self.t[i]
+                if(i+1<0):
+                    t1=self.t[0]
+                if(i+p<0):
+                    t2=self.t[0]
+                if(i+p+1<0):
+                    t3=self.t[0]
+                if(i+1<self.size and i+1>=0):
+                    t1=self.t[i+1]
+                if i+p<self.size and i+p>=0:
+                    t2=self.t[i+p]
+                if i+p+1<self.size and i+p+1>=0:
+                    t3=self.t[i+p+1]
+                tnp1=0
+                tnp2=0
+                if(t2!=t0):
+                    tnp1=(x-t0)/(t2-t0)
+                elif(t2==x):
+                    tnp1=1
+                if(t3!=t1):
+                    tnp2=(t3-x)/(t3-t1)
+                elif(t3==x):
+                    tnp2=1
+                Bn= B[i-k+self.N]*tnp1+Bpr*tnp2
+                Bpr=B[i-k+self.N]
+                B[i-k+self.N]=Bn
+        y=0
+        for i in range(self.N+1):
+            y+=A[i+k]*B[i]
+            print(i,B[i])
+        return y
 # write out the rotation curve (separately for each component, and the total one)
 def writeRotationCurve(filename, potentials):
     radii = numpy.logspace(-2., 2., 81)*intUnits.from_Kpc
@@ -91,7 +151,7 @@ def writeVelocityDistributions(filename, model):
     # create grids in velocity space for computing the spline representation of VDF
     v_max = 360.0*intUnits.from_kms    # km/s
     gridv = numpy.linspace(-v_max, v_max, 75) # use the same grid for all dimensions
-    interp=ag.BsplineInterpolator1d3(gridv)
+    interp=Bspline(gridv)
     (dens,amplvR,amplvphi,amplvz)=ag.computeVelocityDistributionO3(model, point,False,\
         gridv, gridv, gridv)
     # compute the distributions (represented as cubic splines)
@@ -100,9 +160,9 @@ def writeVelocityDistributions(filename, model):
     A=numpy.zeros((len(gridv),4))
     for i in range(len(gridv)):
         A[i,0]=gridv[i]*intUnits.to_kms
-        A[i,1]=interp.interpolate(gridv[i],amplvR,0)/ intUnits.to_kms
-        A[i,2]=interp.interpolate(gridv[i],amplvz,0)/ intUnits.to_kms
-        A[i,3]=interp.interpolate(gridv[i],amplvphi,0)/ intUnits.to_kms
+        A[i,1]=Bspline.interpolate(gridv[i],amplvR,0)/ intUnits.to_kms
+        A[i,2]=Bspline.interpolate(gridv[i],amplvz,0)/ intUnits.to_kms
+        A[i,3]=Bspline.interpolate(gridv[i],amplvphi,0)/ intUnits.to_kms
     numpy.savetxt(filename, A,
         fmt="%.6g", delimiter="\t", header="V\tf(V_R)\tf(V_z)\tf(V_phi) [1/(km/s)]")
 # display some information after each iteration

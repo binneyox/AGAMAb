@@ -1,4 +1,3 @@
-#include <variant>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
@@ -25,22 +24,11 @@
 #include "galaxymodel_base.h"
 #include "galaxymodel_selfconsistent.h"
 #include "galaxymodel_velocitysampler.h"
-#include <stdio.h>
+#define PYAGAMA_VERSION "1.0"
 namespace py = pybind11;
 using namespace pybind11::literals;
 PYBIND11_MODULE(Py_agama, m) {
-    using Bspl13=math::BsplineInterpolator1d<3>;
-    py::class_<Bspl13>(m,"BsplineInterpolator1d3")
-        .def(py::init<const std::vector<double>&>())
-        .def("integrate",&Bspl13::integrate)
-        .def("interpolate",&Bspl13::interpolate)
-        .def("antideriv",&Bspl13::antideriv)
-        .def("xmax",&Bspl13::xmax)
-        .def("xmin",&Bspl13::xmin)
-        .def("xvalues",&Bspl13::xvalues)
-        .def("deriv",&Bspl13::deriv)
-        .def("numValues",&Bspl13::numValues)
-        .def("numVars",&Bspl13::numVars);
+    m.attr("__version__") = PYAGAMA_VERSION;
     py::class_<utils::KeyValueMap>(m,"KeyValueMap")
         .def(py::init<>())
         .def(py::init<const std::string &,const std::string &>(),"params"_a,"whitespace"_a=", ")

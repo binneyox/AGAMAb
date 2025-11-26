@@ -306,11 +306,11 @@ def createMakefile():
             exit(1)
 
     # [1e]: test if C++17 is supported (optional)
-    CXX11_FLAG = '-std=c++17'
+    CXX11_FLAG = '-std=c++11'
     if not MSVC and runCompiler(flags=CXX11_FLAG):
         COMPILE_FLAGS_ALL += [CXX11_FLAG]
     elif not MSVC:
-        print("c++17 or above is needed!")
+        print("c++11 or above is needed!")
         exit()
 
     # [1f]: special treatment for Intel compiler to restore determinism in OpenMP-parallelized loops
@@ -845,9 +845,8 @@ distutils.core.setup(
     author           = 'Eugene Vasiliev',
     author_email     = 'eugvas@protonmail.com',
     license          = 'GPL,MIT,BSD',
-    url              = 'https://github.com/GalacticDynamics-Oxford/Agama',
-    download_url     = 'https://github.com/GalacticDynamics-Oxford/Agama/archive/master.zip',
-    long_description = open('README').read(),
+    url              = 'https://github.com/binneyox/AGAMAb',
+    long_description = "Py_agama is the python implementation of Agamab. This is a previous version of the agama library with imporvements in the torus machinery.",
     requires         = ['setuptools','wheel','numpy'],
     packages         = ['Py_agama'],
     package_dir      = {'Py_agama': '.'},
