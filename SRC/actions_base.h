@@ -200,8 +200,6 @@ class EXP BasePointTransform{
 		virtual double Rn2r(const double) const=0;
 };
 
-//typedef std::shared_ptr<const BasePointTransform> PtrPointTransform;
-
 enum ToyPotType {None, Is, HO};
 
 /** Base class for toy maps used in torus machinery, which provide conversion from action/angle
@@ -227,7 +225,5 @@ class EXP BaseToyMap{
 		// For isochrone x=Js, y=b. For HO x=omegar, y=omegaz; 
 		virtual void getParams(double* x=NULL,double* y=NULL) const=0;
 };
-
-//typedef std::shared_ptr<const BaseToyMap> PtrToyMap;
 
 }  // namespace action

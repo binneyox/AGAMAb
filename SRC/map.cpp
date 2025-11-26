@@ -38,14 +38,23 @@ namespace actions{
                     if (deriv)*deriv = -1.;
                     return;
                 }
-                double f1 = atanh(2 * x1 - 1) - x;
+				double f1=x1-x ,f2=1.;
+				double sn=.5*(tanh(x1)+1);
+				double dsndx1=.5/(cosh(x1)*cosh(x1));
+				for (int i = 0;i < p.size();i++) {
+                    if (value)f1 += sin(2 * (i + 1) * M_PI * sn) * p[i];
+                    if (deriv)f2 += 2 * (i + 1) * M_PI * cos(2 * (i + 1) * M_PI * sn) * p[i]*dsndx1;
+                }
+				if (value)*value = f1;
+                if (deriv)*deriv = f2;
+                /*double f1 = atanh(2 * x1 - 1) - x;
                 double f2 = 2 / (1 - pow_2(2 * x1 - 1));
                 for (int i = 0;i < p.size();i++) {
                     if (value)f1 += sin(2 * (i + 1) * M_PI * x1) * p[i];
                     if (deriv)f2 += 2 * (i + 1) * M_PI * cos(2 * (i + 1) * M_PI * x1) * p[i];
                 }
                 if (value)*value = f1;
-                if (deriv)*deriv = f2;
+                if (deriv)*deriv = f2;*/
             }
         };
         class zfind : public math::IFunction {
@@ -121,8 +130,8 @@ namespace actions{
             }
             double v = rn/sc.x0;
             xfind x1(values, v);
-            double t = math::findRoot(x1, 0.5, 1., 1e-9);
-            double r1 = math::unscale(sc, t);
+            double t = math::findRoot(x1, 0, 1e6, 1e-9);
+            double r1 = t*sc.x0;//math::unscale(sc, t);
             if (drdrn) {
                 double drndr;
                 double rn2=r2rn(r1, values, sc, &drndr);
@@ -326,7 +335,7 @@ namespace actions{
 		return coord::PosMomSph(r, psi, Rz.phi, pr / drdrn, ptheta / dtdv, Rz.pphi);
 	}
 	double PTIso::Rn2r(const double r) const{
-		return rn2r(r, paramsFr, sc, NULL);
+		return r2rn(r, paramsFr, sc, NULL);
 	}
 	coord::PosMomCyl PTHarm::revmap(const coord::PosMomCyl &Rz) const {
 		double R2 = pow_2(Rz.R), z2 = pow_2(Rz.z);
@@ -344,7 +353,7 @@ namespace actions{
 		return coord::PosMomCyl(r, z, Rz.phi, pr / drdrn, ptheta / dzdv, Rz.pphi);
 	}
 	double PTHarm::Rn2r(const double r) const{
-		return r2rn(r, paramsFr, sc, NULL);
+		return rn2r(r, paramsFr, sc, NULL);
 	}
 	coord::PosMomCyl PTIso::map(const coord::PosMomSph &rp, coord::PosMomCyl* dRzdP,
             coord::PosMomCyl *dRzdFr,coord::PosMomCyl *dRzdFz) const {

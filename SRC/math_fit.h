@@ -72,7 +72,8 @@ EXP void linearMultiFit(const IMatrixDense<double>& coefs, const std::vector<dou
     the step must satisfy |dx| < relToler * |x| to end the iterative procedure.
     \param[in]  maxNumIter  is the upper limit on the number of iterations.
     \param[out] result  is the array of best-fit parameters (length N).
-    \return     the number of iterations taken.
+    \return     the number of iterations taken or minus it if not
+    converged.
 */
 EXP int nonlinearMultiFit(const IFunctionNdimDeriv& F, const double xinit[],
     const double relToler, const int maxNumIter, double result[],double* resid=NULL);

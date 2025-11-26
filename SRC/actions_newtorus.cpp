@@ -332,23 +332,23 @@ namespace actions {
 			const Actions& J;
 			const potential::BasePotential& pot;
 			const double freqScale;
-			GenFncFit& GFFS;
+			GenFncFit& GFF;
 			const PtrToyMap ptrTM;
 			int N1;
 		public:
 			torusFitter(const Actions& _J,
 				const potential::BasePotential& _pot,
 				const double _freqScale,
-				const PtrToyMap _ptrTM, GenFncFit& _GFFS) :
-			    J(_J), pot(_pot), freqScale(1000 * _freqScale), GFFS(_GFFS), ptrTM(_ptrTM)
+				const PtrToyMap _ptrTM, GenFncFit& _GFF) :
+			    J(_J), pot(_pot), freqScale(1000 * _freqScale), GFF(_GFF), ptrTM(_ptrTM)
 			{
-				N1 = GFFS.numParams();
+				N1 = GFF.numParams();
 			}
 			virtual unsigned int numVars() const {
 				return N1;
 			}
 			virtual unsigned int numValues() const {
-				return GFFS.numPoints();
+				return GFF.numPoints();
 			}
 			double new_computeHamiltonianAtPoint(const double params[],
 				const unsigned int indPoint, Actions& JT, Actions* dHdJ = NULL,
@@ -356,7 +356,7 @@ namespace actions {
 			{
 				// Generating function computes the toy actions from the real actions
 				// at the given point in the grid of toy angles grid
-				ActionAngles toyAA = GFFS.toyActionAngles(indPoint, params);
+				ActionAngles toyAA = GFF.toyActionAngles(indPoint, params);
 
 				// do not allow to stray into forbidden region of negative actions
 				if (toyAA.Jr < 0 || toyAA.Jz < 0) {
@@ -376,9 +376,9 @@ namespace actions {
 					// derivative of Hamiltonian by toy actions
 					Actions dHby = dHbydJ(dHdX, dXdJ);
 					if (dHdJ) *dHdJ = dHby;
-					for (unsigned int p = 0; p < GFFS.numParams(); p++) {
+					for (unsigned int p = 0; p < GFF.numParams(); p++) {
 						// derivs of toy actions by gen.fnc.params
-						Actions dbyP = GFFS.deriv(indPoint, p, &params[0]);
+						Actions dbyP = GFF.deriv(indPoint, p, &params[0]);
 						dHdParams[p] = dHby.Jr * dbyP.Jr + dHby.Jz * dbyP.Jz
 							+ dHby.Jphi * dbyP.Jphi;
 					}
@@ -393,7 +393,7 @@ namespace actions {
 				int Nnan[max_threads] = { 0 };
 			#ifdef _OPENMP
 				#pragma omp parallel for schedule(dynamic)
-				for (int indPoint = 0; indPoint < GFFS.numPoints(); indPoint++) {
+				for (int indPoint = 0; indPoint < GFF.numPoints(); indPoint++) {
 					int nth = omp_get_thread_num();
 					Actions JT(1, 1, 1);
 					double H = new_computeHamiltonianAtPoint(&params[0], indPoint, JT);
@@ -406,7 +406,7 @@ namespace actions {
 					Nnan[0] += Nnan[i]; Hsm[0] += Hsm[i]; Hsq[0] += Hsq[i]; N[0] += N[i];
 				}
 			#else
-				for (int indPoint = 0; indPoint < GFFS.numPoints(); indPoint++) {
+				for (int indPoint = 0; indPoint < GFF.numPoints(); indPoint++) {
 					Actions JT(1, 1, 1);
 					double H = new_computeHamiltonianAtPoint(&params[0], indPoint, JT);
 					if (JT.Jr < 0 || JT.Jz < 0) Nnan[0]++;
@@ -415,14 +415,14 @@ namespace actions {
 			#endif
 				Hbar = Hsm[0] / N[0];
 				Hsq[0] = Hsq[0] / N[0] - Hbar * Hbar;
-				NANfrac = (double)Nnan[0] / (double)GFFS.numPoints();
+				NANfrac = (double)Nnan[0] / (double)GFF.numPoints();
 				NANbar += NANfrac;
 				return Hsq[0] > 0 ? sqrt(Hsq[0]) : 0;
 			}
 			void evalDeriv(const double params[],
 				double* deltaHvalues, double* dHdParams) const
 			{
-				const unsigned int numPoints = GFFS.numPoints();
+				const unsigned int numPoints = GFF.numPoints();
 				const unsigned int numParams = N1;
 				const unsigned int max_threads = 16;
 
@@ -489,8 +489,12 @@ namespace actions {
 					}
 				}
 			}
+			/* Compare analytic and numerical derivatives
+			 * of H -<H> wrt to the Sk at the grid of points on
+			 * the torus
+			 */
 			void testit(std::vector<double> params, int N) {
-				int nPts = GFFS.numPoints(), nPars = GFFS.numParams();
+				int nPts = GFF.numPoints(), nPars = GFF.numParams();
 				double* HmHbar = new double[nPts];
 				double* HmX = new double[nPts];
 				double* dHdP = new double[nPts * nPars];
@@ -530,8 +534,8 @@ namespace actions {
 			double fitAngleMap(const double params[],
 					   double& Hbar, Frequencies& freqs, GenFncDerivs& dPdJ, 
 					   bool& negJr, bool& negJz) const {
-				unsigned int numPoints = GFFS.numPoints();
-				unsigned int numParams = GFFS.numParams();
+				unsigned int numPoints = GFF.numPoints();
+				unsigned int numParams = GFF.numParams();
 				// the matrix of coefficients shared between three linear systems
 				math::Matrix<double> coefsdHdS(numPoints, numParams + 1);
 				// tmp storage for dH/dS
@@ -612,8 +616,8 @@ namespace actions {
 			math::ScalingInfTh sc;
 			double delta;
 		public:
-			fitmap(const int _N, const int _Nr, Actions _J,
-				Isochrone _is, const potential::BasePotential& _pot, double _R0, double _delta)
+			fitmap(const int _N, const int _Nr, Actions _J, Isochrone _is,
+			       const potential::BasePotential& _pot, double _R0, double _delta)
 				: N(_N), Nr(_Nr), nr(100), nz(100), np(100 * 100),
 				J(_J), is(_is), pot(_pot), sc(_R0), delta(_delta) {
 			}
@@ -1269,8 +1273,8 @@ namespace actions {
 			if (Rats[1] != Rats[0]) continue;
 			if ((Rats.size() == 3) && (Rats[2] != Rats[0])) continue;
 			Hs.push_back(values[i]);
-			if (Rats[0] >= 1) multiples.push_back(Rats[0]);
-			else multiples.push_back(1 / Rats[0]);
+			if (Rats[0] >= 1) multiples.push_back((float)Rats[0]);
+			else multiples.push_back(1 / (float)Rats[0]);
 		}
 		return Hs;
 	}
@@ -1378,12 +1382,13 @@ namespace actions {
 		}
 		fclose(ofile);
 	}
-	PtrToyMap TorusGenerator::chooseTM(GenFncFit& GFFS0,
+	PtrToyMap TorusGenerator::chooseTM(GenFncFit& GFF0,
 					   std::vector<double>& params,
 					   const Actions& J, double& Jscale,
 					   double& freqScale, double& Rsh,
-					   ToyPotType ToyMapType, FILE* logfile,
-					  const int Nn, const int Nnr) const {
+					   double& Hdisp, ToyPotType ToyMapType,
+					   FILE* logfile,
+					  const int Nn0, const int Nnr0) const {
 		const double L = fabs(J.Jphi) + J.Jz, Xip=fabs(J.Jphi)/L;
 		const double Jtot = L + J.Jr;
 		Jscale = J.Jr + J.Jz;
@@ -1426,10 +1431,9 @@ namespace actions {
 		double Rmin, Rmax;
 		potential::findPlanarOrbitExtent(pot, E1, J.Jphi, Rmin, Rmax);
 		freqScale = potential::v_circ(pot, Rsh) / Rsh; //frequency scale set
-//		int Nn = 5;
-//		int Nnr = 5;
 		double tolerance = 1e-9;//controls optimisation
 		PtrToyMap TM;
+		int Nn = Nn0, Nnr = Nnr0;
 		if (ToyMapType == ToyPotType::Is) {
 			//Now choose isochrone
 			//For any Js b=Rsh/ISO.g(Js) f_apo_peri=ISO.f(b.Js,e) & where
@@ -1449,16 +1453,18 @@ namespace actions {
 			const double relToler = 1e-4;
 			double Js_iso = math::findRoot(JF, Jsmin, Jsmax, relToler);
 			double b_iso = Rsh / ISO.g(Js_iso);
-			std::vector<double> params3(Nnr + Nn, 0);
 			Isochrone Is(Js_iso,b_iso);
+			//Now choose Fourier coeffs
+			//Nnr=0;
+			std::vector<double> params3(Nnr + Nn, 0);
 			fitmap fm(Nn, Nnr, J, Is, pot, Rs, Delta);
-			if(Nnr+Nn>0)math::nonlinearMultiFit(fm, &params3[0], tolerance, 20, &params3[0]);
+			if(Nnr+Nn>0)math::nonlinearMultiFit(fm, &params3[0], tolerance, 20, &params3[0], &Hdisp);
 			std::vector<double> pr(Nnr), p(Nn);
-			for (int i = 0;i < Nnr;i++) {
+			for (int i = 0; i < Nnr; i++) {
 				pr[i] = params3[i];
 				if (logfile) fprintf(logfile, "paramsr: %f\n", pr[i]);
 			}
-			for (int i = 0;i < Nn;i++){
+			for (int i = 0; i < Nn; i++){
 				p[i] = params3[i + Nnr];
 				if (logfile) fprintf(logfile, "paramstheta: %f\n", p[i]);
 			}
@@ -1479,8 +1485,9 @@ namespace actions {
 			double omegaz = 2 * J.Jz / pow_2(X) * fac + (1 - fac) * omegaR;
 			HarmonicOscilattor os(omegaR, omegaz);
 			fitmapHarm fm(Nn, Nnr, J, os, pot, Rs, Rs, Delta);
+			//now choose Fourier coeffs
 			std::vector<double> params2(Nn + Nnr, 0.0);
-			if(Nn+Nnr>0)math::nonlinearMultiFit(fm, &params2[0], tolerance, 20, &params2[0]);
+			if(Nn+Nnr>0)math::nonlinearMultiFit(fm, &params2[0], tolerance, 20, &params2[0], &Hdisp);
 			if (logfile) fprintf(logfile, "HO freqs: %f %f\n", omegaR, omegaz);
 			std::vector<double> p(Nnr, 0), pzv(Nn, 0);
 			for (int i = 0;i < Nnr;i++) {
@@ -1496,6 +1503,7 @@ namespace actions {
 			PTHarm PT(Delta,sc,scz,pzv,p);
 			TM=PtrToyMap(new ToyMapHarm(os,PT));
 		}
+		Hdisp = sqrt(Hdisp);
 		return TM;
 	}
 	Torus TorusGenerator::giveBaseTorus(const Actions& J, const PtrToyMap& ptrTM) const {
@@ -1503,9 +1511,9 @@ namespace actions {
 		int nrmax = 0, nzmax = 0;// nzmax must be even
 		double Hbar;
 		GenFncIndices indices = makeGridIndices(nrmax, nzmax);
-		//GenFncFit GFFS(indices, 8, 6, J);
-		GenFncFit GFFS(indices, 1, 1, J);
-		torusFitter TF(J, pot, 1, ptrTM, GFFS);
+		//GenFncFit GFF(indices, 8, 6, J);
+		GenFncFit GFF(indices, 1, 1, J);
+		torusFitter TF(J, pot, 1, ptrTM, GFF);
 		Frequencies freqs;
 		GenFncDerivs dPdJ;
 		bool negJr, negJz;
@@ -1521,30 +1529,39 @@ namespace actions {
 			fopen_s(&logfile, logfname.c_str(), "a");
 			fprintf(logfile, "\nActions (%f %f %f)\n", J.Jr, J.Jz, J.Jphi);
 		}
-		int nrmax = 6, nzmax = 4;// nzmax must be even
+		int nrmax = 10, nzmax = 4;// nzmax must be even
 		GenFncIndices indices = makeGridIndices(nrmax, nzmax);
 		std::vector<double> params(indices.size(), 0);
-		double timesr = 1.5, timesz = 1.5;
-		GenFncFit GFFS0(indices, timesr, timesz, J);
-		double Jscale, freqScale, Rsh;
-		PtrToyMap ptrTM(chooseTM(GFFS0, params, J, Jscale, freqScale, Rsh,
-					 ToyMapType, logfile));
+		//double timesr = 1.5, timesz = 1.5;
+		double timesr = 3.5, timesz = 3.5;
+		GenFncFit GFF0(indices, timesr, timesz, J);
+		double Jscale, freqScale, Rsh, HdispTM;
+		PtrToyMap ptrTM(chooseTM(GFF0, params, J, Jscale, freqScale, Rsh,
+					 HdispTM, ToyMapType, logfile));
+		if(ptrTM->getToyMapType()==ToyPotType::None){
+			torusFitter TF(J, pot, freqScale, ptrTM, GFF0);
+			for(int i=0; i<params.size(); i++)
+				TF.testit(params,i);
+		}
 		double tolerance = 1e-9;//controls optimisation of the given Sn
 		double tol = defaultTol * tighten;
 		double Hbar, Hdisp = 1e20, Htarget = tol * freqScale * Jscale;
 		bool converged = false;
-		int Loop = 0, MaxLoop = 12, maxNumIter = 10;
+		int Loop = 0, MaxLoop = 7, maxNumIter = 50;
 		bool stuck = false;
 		std::vector<double> rep;
+		rep.push_back(HdispTM);
+		converged = (HdispTM < tol * freqScale * Jscale);		
 		do {
 			double Hdisp_old = Hdisp;
-			int numTerms_old = GFFS0.numTerms();
-			GenFncFit GFFS(indices, timesr, timesz, J);
-			torusFitter TF(J, pot, freqScale, ptrTM, GFFS);
+			unsigned int numTerms_old = GFF0.numTerms();
+			GenFncFit GFF(indices, timesr, timesz, J);
+			torusFitter TF(J, pot, freqScale, ptrTM, GFF);
 			if (std::isnan(Hdisp)) exit(0);
 			try {
 				NANbar = 0;
 				int numIter = math::nonlinearMultiFit(TF, &params[0], tolerance, maxNumIter, &params[0], &Hdisp);
+				printf("Iter %d ",numIter);
 				Hdisp = sqrt(Hdisp);
 				rep.push_back(Hdisp);
 				converged = (Hdisp < tol * freqScale * Jscale);
@@ -1553,17 +1570,17 @@ namespace actions {
 				std::cout << "Exception in fitTorus: " << e.what() << '\n';
 			}
 			if(Loop>8)
-				stuck = fabs(1 - rep[Loop] / rep[Loop - 1]) < 1e-2 && GFFS.numTerms() > numTerms_old;
+				stuck = fabs(1 - rep[Loop] / rep[Loop - 1]) < 1e-2 && GFF.numTerms() > numTerms_old;
 			if (converged || (Loop > 1 && stuck)) break;
-			if (GFFS.numTerms() > numTerms_old && Hdisp > Hdisp_old) {//something wrong: back up 
-				indices = GFFS0.indices;
+			if (GFF.numTerms() > numTerms_old && Hdisp > Hdisp_old) {//something wrong: back up 
+				indices = GFF0.indices;
 				params.resize(indices.size());
 				Hdisp = Hdisp_old;
 				timesr *= 1.2; timesz *= 1.2;
 			}
 			else {
-				GFFS0 = GFFS;
-				indices = GFFS.expand(params);
+				GFF0 = GFF;
+				indices = GFF.expand(params);
 			}
 			Loop++;
 		} while (Loop < MaxLoop);
@@ -1571,8 +1588,11 @@ namespace actions {
 			printf("Quit early because Hvar not decreasing\n");
 			for(int i=0;i<Loop;i++) printf("%g ",rep[i]);
 		}
-		GenFncFit GFFS(indices, 2*timesr, 2*timesz, J);
-		printf("Hdisp %e after %d expansions\n", Hdisp, Loop);
+		for(int i=0;i<Loop;i++) printf("%g ",rep[i]); printf("\n");
+		GenFncFit GFF(indices, 2*timesr, 2*timesz, J);
+		std::string TMtype = ptrTM->getToyMapType()==ToyPotType::HO? "HO" : "Is";
+		printf("With %s TM Hdisp from %e to %e after %d expansions\n",
+		       TMtype.c_str(), rep[0], Hdisp,Loop);
 		if (!converged && logfile) {
 			fprintf(logfile, "\nfitTorus failed to converge: %7.3e vs %7.3e target. ",
 				  Hdisp, Htarget);
@@ -1580,7 +1600,7 @@ namespace actions {
 			fprintf(logfile, "\nNANfracs: %f %f, resids:\n", NANfrac, NANbar);
 			for (int i = 0; i < rep.size(); i++) fprintf(logfile, "%7.2e ", rep[i]); printf("\n");
 		}
-		torusFitter TF(J, pot, freqScale, ptrTM, GFFS);
+		torusFitter TF(J, pot, freqScale, ptrTM, GFF);
 		Frequencies freqs;
 		GenFncDerivs dPdJ;
 		bool negJr,negJz;
@@ -1601,10 +1621,10 @@ namespace actions {
 		GenFncIndices indices = makeGridIndices(nrmax, nzmax);
 		std::vector<double> params(indices.size(), 0);
 		double timesr = 1.5, timesz = 1.5;
-		GenFncFit GFFS0(indices, timesr, timesz, J);
-		double Jscale, freqScale, Rsh;
-		PtrToyMap ptrTM(chooseTM(GFFS0, params, J, Jscale, freqScale, Rsh,
-					 ToyMapType, logfile, 0, 0));
+		GenFncFit GFF0(indices, timesr, timesz, J);
+		double Jscale, freqScale, Rsh, HdispTM;
+		PtrToyMap ptrTM(chooseTM(GFF0, params, J, Jscale, freqScale, Rsh,
+					 HdispTM, ToyMapType, logfile, 0, 0));
 		double tolerance = 1e-9;//controls optimisation of the given Sn
 		double tol = defaultTol * tighten;
 		double Hbar, Hdisp = 1e20, Htarget = tol * freqScale * Jscale;
@@ -1614,9 +1634,9 @@ namespace actions {
 		std::vector<double> rep;
 		do {
 			double Hdisp_old = Hdisp;
-			int numTerms_old = GFFS0.numTerms();
-			GenFncFit GFFS(indices, timesr, timesz, J);
-			torusFitter TF(J, pot, freqScale, ptrTM, GFFS);
+			unsigned int numTerms_old = GFF0.numTerms();
+			GenFncFit GFF(indices, timesr, timesz, J);
+			torusFitter TF(J, pot, freqScale, ptrTM, GFF);
 			if (std::isnan(Hdisp)) exit(0);
 			try {
 				NANbar = 0;
@@ -1629,17 +1649,17 @@ namespace actions {
 				std::cout << "Exception in fitTorus: " << e.what() << '\n';
 			}
 			if(Loop>8)
-				stuck = fabs(1 - rep[Loop] / rep[Loop - 1]) < 1e-2 && GFFS.numTerms() > numTerms_old;
+				stuck = fabs(1 - rep[Loop] / rep[Loop - 1]) < 1e-2 && GFF.numTerms() > numTerms_old;
 			if (converged || (Loop > 1 && stuck)) break;
-			if (GFFS.numTerms() > numTerms_old && Hdisp > Hdisp_old) {//something wrong: back up 
-				indices = GFFS0.indices;
+			if (GFF.numTerms() > numTerms_old && Hdisp > Hdisp_old) {//something wrong: back up 
+				indices = GFF0.indices;
 				params.resize(indices.size());
 				Hdisp = Hdisp_old;
 				timesr *= 1.2; timesz *= 1.2;
 			}
 			else {
-				GFFS0 = GFFS;
-				indices = GFFS.expand(params);
+				GFF0 = GFF;
+				indices = GFF.expand(params);
 			}
 			Loop++;
 		} while (Loop < MaxLoop);
@@ -1647,7 +1667,7 @@ namespace actions {
 			printf("Quit early because Hvar not decreasing\n");
 			for(int i=0;i<Loop;i++) printf("%g ",rep[i]);
 		}
-		GenFncFit GFFS(indices, 2*timesr, 2*timesz, J);
+		GenFncFit GFF(indices, 2*timesr, 2*timesz, J);
 		printf("Hdisp %e after %d expansions\n", Hdisp, Loop);
 		if (!converged && logfile) {
 			fprintf(logfile, "\nfitTorus failed to converge: %7.3e vs %7.3e target. ",
@@ -1656,7 +1676,7 @@ namespace actions {
 			fprintf(logfile, "\nNANfracs: %f %f, resids:\n", NANfrac, NANbar);
 			for (int i = 0; i < rep.size(); i++) fprintf(logfile, "%7.2e ", rep[i]); printf("\n");
 		}
-		torusFitter TF(J, pot, freqScale, ptrTM, GFFS);
+		torusFitter TF(J, pot, freqScale, ptrTM, GFF);
 		Frequencies freqs;
 		GenFncDerivs dPdJ;
 		bool negJr,negJz;
@@ -1676,10 +1696,11 @@ namespace actions {
 		int nrmax = 2, nzmax = 6;// nzmax must be even
 		GenFncIndices indices = makeGridIndices(nrmax, nzmax);
 		std::vector<double> params(indices.size(), 0);
-//		GenFncFit GFFS0(indices, 8, 6, J);
-		GenFncFit GFFS0(indices, 1, 1, J);
-		double Jscale, freqScale, Rsh;
-		PtrToyMap ptrTM(chooseTM(GFFS0, params, J, Jscale, freqScale, Rsh,ToyMapType));
+//		GenFncFit GFF0(indices, 8, 6, J);
+		GenFncFit GFF0(indices, 1, 1, J);
+		double Jscale, freqScale, Rsh, HdispTM;
+		PtrToyMap ptrTM(chooseTM(GFF0, params, J, Jscale, freqScale, Rsh,
+					 HdispTM, ToyMapType));
 		if(logfile) fclose(logfile);
 		return giveBaseTorus(J, ptrTM);
 	}
@@ -1707,8 +1728,8 @@ namespace actions {
 		Frequencies freqs;
 		GenFncDerivs dPdJ;
 		bool negJr, negJz;
-		GenFncFit GFFS(indices, 2*timesr, 2*timesz, J);
-		torusFitter TFS(J, pot, freqScale, ptrTM, GFFS);
+		GenFncFit GFFP(indices, 2*timesr, 2*timesz, J);
+		torusFitter TFS(J, pot, freqScale, ptrTM, GFFP);
 		Hdisp = TFS.fitAngleMap(&params[0], Hbar, freqs, dPdJ, negJr, negJz);
 		if(negJr || negJz) printf("actions<0 in fitAngleMap: %d %d\n",negJr,negJz);
 		GenFnc G(indices, params, dPdJ);

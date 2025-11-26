@@ -410,6 +410,30 @@ void findCrossingPointR(
 
 }//namespace anon
 
+void testFDfinder(double E, double Rsh, double vR, double FD, const BasePotential& pot){
+	FDfinder FDf(E, Rsh, vR, FD, pot);
+	double u=.1, du=1e-5*fabs(u), Delta=FD, dD=1e-5*FD;
+	double p2U, p2primeU, p2L, p2primeL, d2p2du2;
+	math::Matrix<double> M(2,2), Mp(2,2);
+	u+=du;
+	FDf.derivs(u, Delta, d2p2du2, &p2U, &p2primeU);
+	u-=2*du;
+	FDf.derivs(u, Delta, d2p2du2, &p2L, &p2primeL);
+	Mp(0,0)=.5*(p2U-p2L)/du;
+	Mp(1,0)=.5*(p2primeU-p2primeL)/du;
+	u+=du;
+	Delta+=dD;
+	FDf.derivs(u, Delta, d2p2du2, &p2U, &p2primeU);
+	Delta-=2*dD;
+	FDf.derivs(u, Delta, d2p2du2, &p2L, &p2primeL);
+	Mp(0,1)=.5*(p2U-p2L)/dD;
+	Mp(1,1)=.5*(p2primeU-p2primeL)/dD;
+	Delta+=dD;
+	M = FDf.derivs(u, Delta, d2p2du2, &p2L, &p2primeL);
+	printf("(%g %g) (%g %g)\n",M(0,0),Mp(0,0),M(0,1),Mp(0,1));
+	printf("(%g %g) (%g %g)\n",M(1,0),Mp(1,0),M(1,1),Mp(1,1));
+}
+
 /* We integrate shell orbits on grid in E,Xi=Jphi/Jc(E) (energy and inclination)
  * For each of D,Rsh we produce 2 types of LinearInterpolator2d:
  * For actionFinder x,y are scaledE and scaledXi
@@ -570,11 +594,13 @@ EXP PolarInterpolator::PolarInterpolator(const potential::BasePotential& pot,
 		int i = 0;
 		double Rsh, vR, Umin, d2pu2du2;
 		while(i<sizeE) {
+
 			Rsh = PtrShellI->getRsh(gridE[i], 0, 1/Phi0) * R_circ(pot, gridE[i]);
 			double FD = PtrShellI->getDelta(gridE[i], 0, 1/Phi0);
 			if (gridE[i] / Phi0 > 0.2 && !interp) {
 				actions::Actions Jcrit = BoxLoopTrAct(pot, gridE[i], Rsh, vR);
 				FDfinder FDf(gridE[i], Rsh, vR, FD, pot);
+				if(i==5) testFDfinder(gridE[i], Rsh, vR, FD, pot);
 				gridFD.push_back(FDf.bestFD(Umin, d2pu2du2));
 				gridUmin.push_back(Umin);
 				const coord::ProlSph coordsys(gridFD.back());

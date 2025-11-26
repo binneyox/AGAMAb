@@ -63,7 +63,7 @@ namespace actions {
 			const double timesr, const double timesz)
 		{
 			//	int maxmr=4, maxmz=4, maxmphi=0;
-			int maxmr = 0, maxmz = 0, maxmphi = 0;
+			int maxmr = 4, maxmz = 4, maxmphi = 0;
 			for (unsigned int i = 0; i < indices.size(); i++) {
 				maxmr = std::max<int>(maxmr, math::abs(indices[i].mr));
 				maxmz = std::max<int>(maxmz, math::abs(indices[i].mz));

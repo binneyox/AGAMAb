@@ -160,7 +160,8 @@ namespace actions {
 		/* Fit toy map with as default 5 Fourier terms in each
 		 * coord*/ 
 		PtrToyMap chooseTM(GenFncFit&, std::vector<double>&, const Actions&,
-				   double&, double&, double&, ToyPotType ToyMapType=ToyPotType::None,
+				   double&, double&, double&, double&,
+				   ToyPotType ToyMapType=ToyPotType::None,
 				   FILE* logfile = NULL, const int Nn=5, const int Nnr=5) const;
 		Torus fitTorus(const Actions& J, const double tighten = 1,
 			       const ToyPotType ToyMapType=ToyPotType::None) const;
