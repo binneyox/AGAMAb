@@ -1591,8 +1591,8 @@ namespace actions {
 //		for(int i=0;i<Loop;i++) printf("%g ",rep[i]); printf("\n");
 		GenFncFit GFF(indices, 2*timesr, 2*timesz, J);
 		std::string TMtype = ptrTM->getToyMapType()==ToyPotType::HO? "HO" : "Is";
-		printf("With %s TM Hdisp from %e to %e after %d expansions\n",
-		       TMtype.c_str(), rep[0], Hdisp,Loop);
+		//printf("With %s TM Hdisp from %e to %e after %d expansions\n",
+		//       TMtype.c_str(), rep[0], Hdisp,Loop);
 		if (!converged && logfile) {
 			fprintf(logfile, "\nfitTorus failed to converge: %7.3e vs %7.3e target. ",
 				  Hdisp, Htarget);

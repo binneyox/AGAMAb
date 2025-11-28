@@ -71,7 +71,7 @@ EXP math::Matrix<double> FDfinder::derivs(double u,double Delta, double& d2p2du2
 
 //implements N-R search for umin and Delta s.t.  p_u^2=dp_u^2/du=0
 EXP double FDfinder::bestFD(double& Umin, double& d2p2du2){
-	double u=asinh(.2*Rsh/Delta0);
+	double u=asinh(.1*Rsh/Delta0);
 	double det, p2=1, p2prime=1, Delta=Delta0, fac=1;
 	int i=0;
 	while(i<20 && u>0 && (fabs(p2)>1e-4 || fabs(p2prime)>1e-4)){
@@ -89,7 +89,7 @@ EXP double FDfinder::bestFD(double& Umin, double& d2p2du2){
 		i++;
 	}
 	if(i>16){//failure
-		printf("bestFD overrun at Rsh %g %g (%g %g %g)\n",Rsh,Delta,p2,p2prime,det);
+		//printf("bestFD overrun at Rsh %g %g (%g %g %g)\n",Rsh,Delta,p2,p2prime,det);
 		Umin=0; return Delta0;
 	}
 	Umin=u;
@@ -370,7 +370,7 @@ void findCrossingPointR(
 			timeCross  = 0;
 			Rcross     = R0;   // this would terminate the root-finder, but we have no better option..
 			dRcrossdR0 = NAN;
-			printf("Failed to compute shell orbit for E=%g, Lz=%g, R=%g\n",E,Lz,R0);
+			//printf("Failed to compute shell orbit for E=%g, Lz=%g, R=%g\n",E,Lz,R0);
 			return;
 		} else {
 			numStepsODE++;
