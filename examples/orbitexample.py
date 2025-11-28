@@ -1,5 +1,5 @@
 import numpy as np
-import agama as AG
+import agamab as AG
 import matplotlib.pyplot as plt
 IU=AG.galactic_kms # Conversions to InternalUnits
 sun=AG.solarShifter(IU)

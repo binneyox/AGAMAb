@@ -12,7 +12,7 @@ A modification of this script that creates a self-consistent three-component mod
 (disk, bulge and halo) is given in example_self_consistent_model3.py
 This example is the Python counterpart of tests/example_self_consistent_model.cpp
 """
-import agama as ag
+import agamab as ag
 import numpy, sys, os, bisect
 intUnits=ag.IntUnits(ag.Kpc, ag.Myr)
 extUnits=ag.ExtUnits(intUnits, 1.*ag.Kpc, 1.*ag.kms, 1.*ag.Msun)
@@ -75,7 +75,6 @@ class Bspline:
         y=0
         for i in range(self.N+1):
             y+=A[i+k]*B[i]
-            print(i,B[i])
         return y
 # write out the rotation curve (separately for each component, and the total one)
 def writeRotationCurve(filename, potentials):
@@ -107,7 +106,6 @@ def writeSurfaceDensityProfile(filename, model):
 def writeVerticalDensityProfile(filename,pot,af, DFcomponents):
     print("Writing vertical density profile")
     heights = numpy.hstack((numpy.linspace(0, 1.5, 13), numpy.linspace(2, 8, 13)))*intUnits.from_Kpc
-    print(heights)
     R = solarRadius * intUnits.from_Kpc
     nh = len(heights)
     nc=DFcomponents.numValues()
@@ -137,7 +135,7 @@ def writeVelocityDispersionProfile(filename, model):
             vel2[ir,i,1]=veloc2[i].vphi2
             vel2[ir,i,2]=veloc2[i].vz2
     vel2[:,:,1] -= vel[:,:,1]**2
-    A=(vel2[:,:,0:3]**0.5, vel[:,:,1:2])*intUnits.to_kms
+    A=(vel2[:,:,0:3]**0.5*intUnits.to_kms, vel[:,:,1:2]*intUnits.to_kms)
     numpy.savetxt(filename, numpy.column_stack((radii, numpy.dstack(A).reshape(len(radii),-1))),
         fmt="%.6g", delimiter="\t", header="Radius[Kpc]\t"
         "ThinDisk:sigma_r\tsigma_phi\tsigma_z\tv_phi\t"
@@ -151,7 +149,7 @@ def writeVelocityDistributions(filename, model):
     # create grids in velocity space for computing the spline representation of VDF
     v_max = 360.0*intUnits.from_kms    # km/s
     gridv = numpy.linspace(-v_max, v_max, 75) # use the same grid for all dimensions
-    interp=Bspline(gridv)
+    interp=Bspline(gridv,3)
     (dens,amplvR,amplvphi,amplvz)=ag.computeVelocityDistributionO3(model, point,False,\
         gridv, gridv, gridv)
     # compute the distributions (represented as cubic splines)
@@ -159,10 +157,11 @@ def writeVelocityDistributions(filename, model):
     gridv = numpy.linspace(-v_max, v_max, 201)
     A=numpy.zeros((len(gridv),4))
     for i in range(len(gridv)):
+        print(i,gridv[i],len(amplvR))
         A[i,0]=gridv[i]*intUnits.to_kms
-        A[i,1]=Bspline.interpolate(gridv[i],amplvR,0)/ intUnits.to_kms
-        A[i,2]=Bspline.interpolate(gridv[i],amplvz,0)/ intUnits.to_kms
-        A[i,3]=Bspline.interpolate(gridv[i],amplvphi,0)/ intUnits.to_kms
+        A[i,1]=interp.interpolate(gridv[i],amplvR)/ intUnits.to_kms
+        A[i,2]=interp.interpolate(gridv[i],amplvz)/ intUnits.to_kms
+        A[i,3]=interp.interpolate(gridv[i],amplvphi)/ intUnits.to_kms
     numpy.savetxt(filename, A,
         fmt="%.6g", delimiter="\t", header="V\tf(V_R)\tf(V_z)\tf(V_phi) [1/(km/s)]")
 # display some information after each iteration

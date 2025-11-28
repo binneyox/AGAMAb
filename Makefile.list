@@ -61,8 +61,8 @@ SOURCES   = \
             potential_perfect_ellipsoid.cpp \
             potential_spheroid.cpp \
             potential_utils.cpp \
-	    Py_agama.cpp \
+	    ../Py/Py_agama.cpp \
             utils.cpp \
             utils_config.cpp
 # test and example programs
-TESTSRCS  = 
+TESTSRCS  = test_actions.cpp

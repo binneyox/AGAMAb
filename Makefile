@@ -6,8 +6,8 @@ include Makefile.local
 # and contains the list of source files and folders
 include Makefile.list
 
-LIBNAME_SHARED = Py_agama.so
-LIBNAME_STATIC = Py_agama.a
+LIBNAME_SHARED = agamab.so
+LIBNAME_STATIC = agamab.a
 OBJECTS  = $(patsubst %.cpp,$(OBJDIR)/%.o,$(SOURCES))
 TESTEXE  = $(patsubst %.cpp,$(EXEDIR)/%.exe,$(TESTSRCS))
 COMPILE_FLAGS_ALL += -I$(SRCDIR)
@@ -25,9 +25,9 @@ $(LIBNAME_SHARED):  $(OBJECTS) Makefile Makefile.local Makefile.list
 	$(LINK) -shared -o $(LIBNAME_SHARED) $(OBJECTS) $(LINK_FLAGS_ALL) $(LINK_FLAGS_LIB) $(LINK_FLAGS_LIB_AND_EXE_STATIC)
 
 # two possible choices for linking the executable programs:
-# 1. shared (default) uses the shared library agama.so, which makes the overall code size smaller,
+# 1. shared (default) uses the shared library agamab.so, which makes the overall code size smaller,
 # but requires that the library is present in the same folder as the executable files.
-# 2. static (turned on by declaring an environment variable AGAMA_STATIC) uses the static library libagama.a
+# 2. static (turned on by declaring an environment variable AGAMA_STATIC) uses the static library libagamab.a
 # together with all other third-party libraries (libgsl.a, libgslcblas.a, possibly nemo, unsio, glpk, etc.)
 # but notably _excluding_ python, since it is used only in two places:
 # (a) the python extension module (which is the shared library itself), and
@@ -38,7 +38,7 @@ $(LIBNAME_SHARED):  $(OBJECTS) Makefile Makefile.local Makefile.list
 
 ifndef AGAMA_STATIC
 # for each executable file, first make sure that the exe/ folder exists,
-# and create a symlink named agama.so pointing to ../agama.so in that folder if needed
+# and create a symlink named agamab.so pointing to ../agamab.so in that folder if needed
 # (if this was an actual file and not a symlink, then delete it first and then create a symlink)
 $(EXEDIR)/%.exe:  $(TESTSDIR)/%.cpp $(LIBNAME_SHARED)
 	@mkdir -p $(EXEDIR)

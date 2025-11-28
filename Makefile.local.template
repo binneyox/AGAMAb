@@ -15,17 +15,17 @@ endif
 LINK = $(CXX)
 
 # compilation and linking flags:
-# CXXFLAGS apply to the complilation of both the AGAMA shared library and all programs that use it;
+# CXXFLAGS apply to the complilation of both the AGAMAb shared library and all programs that use it;
 # COMPILE_FLAGS are the additional flags for the compilation of the shared library
 # (but not example programs), and determine the available features (depending on the 3rd-party libraries);
 # LINK_FLAGS   determine the linker option for the shared library only.
 
 # COMPILE_FLAGS_ALL: compilation flags for both the shared library and any programs that use it
 # COMPILE_FLAGS_LIB: additional compilation flags for the library files only (src/*.cpp)
-# LINK_FLAGS_ALL: linking flags for both the shared library (agama.so) and any executable programs, regardless of how they are linked
-# LINK_FLAGS_LIB: additional linking flags for the shared library only (agama.so)
-# LINK_FLAGS_LIB_AND_EXE_STATIC: additional linking flags for the shared library (agama.so) and executables that use the static library (agama.a)
-# LINK_FLAGS_EXE_SHARED: additional linking flags for executables which use the shared library (agama.so)
+# LINK_FLAGS_ALL: linking flags for both the shared library (agamab.so) and any executable programs, regardless of how they are linked
+# LINK_FLAGS_LIB: additional linking flags for the shared library only (agamab.so)
+# LINK_FLAGS_LIB_AND_EXE_STATIC: additional linking flags for the shared library (agamab.so) and executables that use the static library (agamab.a)
+# LINK_FLAGS_EXE_SHARED: additional linking flags for executables which use the shared library (agamab.so)
 
 # A note about optimization-specific flags: -march=native is not supported on some machines,
 # and may be replaced by -march=core2 or whatever your processor name is.
@@ -39,7 +39,7 @@ LINK = $(CXX)
 # so one has to either disable it by removing the "-fopenmp" flag below (and of course sacrifice a lot
 # in performance), or install an alternative compiler such as gcc or icc.
 # Finally, -fPIC is necessary on 64-bit systems for compiling into a shared library
-# (dunno why it isn't on by default!), and since the shared library Py_agama.so includes all relevant
+# (dunno why it isn't on by default!), and since the shared library agamab.so includes all relevant
 # third-party libraries (GSL, UNSIO, etc.), they also must be compiled with this flag!
 # E.g., in the case of GSL you would need to run its "./configure" script with an extra option "CFLAGS=-fPIC"
 COMPILE_FLAGS_ALL += -fPIC -fopenmp -Wall -O2 -march=native
@@ -50,7 +50,7 @@ COMPILE_FLAGS_ALL += -std=c++17
 
 # GSL library is required; check the path names;
 # it is recommended to link against the static library libgsl.a, so that it will be included into
-# the shared library Py_agama.so - for this you may need to replace -L/path -lgsl with the full path
+# the shared library agamab.so - for this you may need to replace -L/path -lgsl with the full path
 # to the static library (e.g. /usr/local/lib/libgsl.a, and similarly for libcblas.a), because
 # by default the linker prefers shared libgsl.so over static libgsl.a;
 # note that GSL must be compiled with -fPIC flag
@@ -69,16 +69,16 @@ LINK_FLAGS_LIB_AND_EXE_STATIC    += -L/path/to/gsl/lib -lgsl -lgslcblas
 # The full path to numpy headers is easier to find: just type
 # > python -c 'import numpy; print(numpy.get_include())'
 # Linking to an incorrect version of Python (i.e. not the one that is invoked when you type 'python'
-# in the terminal) may result in various errors when trying to "import Py_agama" within Python, such as
+# in the terminal) may result in various errors when trying to "import agamab" within Python, such as
 # "ImportError: numpy.core.multiarray failed to import",  or
 # "RuntimeError: module compiled against API version 9 but this version of numpy is 8",  or
 # "Fatal Python error: PyThreadState_Get: no current thread".
-# In order to make the Agamab extension available to Python, you may need to add the path to Py_agama.so
+# In order to make the Agamab extension available to Python, you may need to add the path to agamab
 # to the PYTHONPATH environment variable (better to do put it into .bashrc or .cshrc):
 # > export PYTHONPATH=/path/to/agamab:$PYTHONPATH   (for bash)
 # > setenv PYTHONPATH /path/to/agamab:$PYTHONPATH   (for csh/tcsh)
 # If everything works well, you should be able to run
-# > python -c 'import Py_agama; print(Py_agama.__version__)'
+# > python -c 'import agamab; print(Py_agama.__version__)'
 # or, better, run some of the example scripts in the "py" folder.
 # Running the setup.py script to do all these chores is a highly recommended alternative.
 COMPILE_FLAGS_LIB += -DHAVE_PYTHON -I/usr/include/python -I/path/to/numpy/core/include
@@ -117,15 +117,15 @@ LINK_FLAGS_LIB += -lpython
 
 # some OS-dependent wizardry needed to ensure that the executables are linked to
 # the shared library using a relative path, so that it will be looked for in the same
-# folder as the executables (a symlink is created as exe/Py_agama.so -> Py_agama.so).
+# folder as the executables (a symlink is created as exe/agamab.so -> agamab.so).
 # This allows the executables to be copied/moved to and run from any other folder
-# without the need to put Py_agama.so into a system-wide folder such as /usr/local/lib,
+# without the need to put agamab.so into a system-wide folder such as /usr/local/lib,
 # or add it to LD_LIBRARY_PATH, provided that a copy of the shared library or a symlink
 # to it resides in the same folder as the executable program.
 ifeq ($(shell uname -s),Darwin)
 # on MacOS we need to modify the header of the shared library, which is then
 # automatically used to embed the correct relative path into each executable
-LINK_FLAGS_LIB += -Wl,-install_name,@executable_path/Py_agama.so
+LINK_FLAGS_LIB += -Wl,-install_name,@executable_path/agamab.so
 else
 # on Linux we need to pass this flag to every compiled executable in the exe/ subfolder
 LINK_FLAGS_EXE_SHARED += -Wl,-rpath,'$$ORIGIN'

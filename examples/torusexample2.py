@@ -1,4 +1,4 @@
-import agama as AG
+import agamab as AG
 import matplotlib.pyplot as plt
 
 p=AG.createPotential("type=spheroid, gamma=1, beta=3, alpha=1, scaleradius=1.0, densityNorm=0.1, q=0.5")

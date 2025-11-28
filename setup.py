@@ -1,5 +1,6 @@
 helpstr="""
-Installation script for the Agama library.
+Installation script for the Agamab library.
+Slightly modified from the Agama library
 It could be run just as any regular python program,
 > python setup.py install --user
 (here --user allows it to be installed without admin privilegies, but should not be used with
@@ -759,15 +760,15 @@ PyInit_agamatest(void) {
 
     # [8]: some OS-dependent wizardry needed to ensure that the executables are linked to
     # the shared library using a relative path, so that it will be looked for in the same
-    # folder as the executables (a symlink is created as exe/Py_agama.so -> Py_agama.so).
+    # folder as the executables (a symlink is created as exe/agamab.so -> agamab.so).
     # This allows the executables to be copied/moved to and run from any other folder
-    # without the need to put Py_agama.so into a system-wide folder such as /usr/local/lib,
+    # without the need to put agamab.so into a system-wide folder such as /usr/local/lib,
     # or add it to LD_LIBRARY_PATH, provided that a copy of the shared library or a symlink
     # to it resides in the same folder as the executable program.
     if MACOS:
         # on MacOS we need to modify the header of the shared library, which is then
         # automatically used to embed the correct relative path into each executable
-        LINK_FLAGS_LIB += ['-Wl,-install_name,@executable_path/Py_agama.so']
+        LINK_FLAGS_LIB += ['-Wl,-install_name,@executable_path/agamab.so']
     elif not MSVC:
         # on Linux we need to pass this flag to every compiled executable in the exe/ subfolder
         LINK_FLAGS_EXE_SHARED += ["-Wl,-rpath,'$$ORIGIN'"]
@@ -787,15 +788,15 @@ PyInit_agamatest(void) {
         'COMPILE_FLAGS_ALL = ' + ' '.join(compressList(COMPILE_FLAGS_ALL)) + '\n' +
         '# additional compilation flags for the library files only (src/*.cpp)\n' +
         'COMPILE_FLAGS_LIB = ' + ' '.join(compressList(COMPILE_FLAGS_LIB)) + '\n' +
-        '# linking flags for both the shared library (Py_agama.so) and any executable programs, regardless of how they are linked\n' +
+        '# linking flags for both the shared library (agamab.so) and any executable programs, regardless of how they are linked\n' +
         'LINK_FLAGS_ALL = ' + ' '.join(compressList(LINK_FLAGS_ALL)) + '\n' +
-        '# additional linking flags for the shared library only (Py_agama.so)\n' +
+        '# additional linking flags for the shared library only (agamab.so)\n' +
         'LINK_FLAGS_LIB = ' + ' '.join(compressList(LINK_FLAGS_LIB)) + '\n' +
-        '# additional linking flags for the shared library (Py_agama.so) and executables that use the static library (Py_agama.a)\n' +
+        '# additional linking flags for the shared library (agamab.so) and executables that use the static library (agamab.a)\n' +
         'LINK_FLAGS_LIB_AND_EXE_STATIC = ' + ' '.join(compressList(LINK_FLAGS_LIB_AND_EXE_STATIC)) + '\n' +
-        '# additional linking flags for executables which use the shared library (Py_agama.so)\n' +
+        '# additional linking flags for executables which use the shared library (agamab.so)\n' +
         'LINK_FLAGS_EXE_SHARED = ' + ' '.join(compressList(LINK_FLAGS_EXE_SHARED)) + '\n' +
-        '# additional linking flags for non-C++ executables (e.g. fortran programs) that use the static library (Py_agama.a)\n' +
+        '# additional linking flags for non-C++ executables (e.g. fortran programs) that use the static library (agamab.a)\n' +
         'LINK_FLAGS_EXE_STATIC_NONCPP = ' + LINK_FLAG_EXE_STATIC_NONCPP + '\n')
 
 
@@ -810,22 +811,22 @@ class MyBuildExt(CmdBuildExt):
         say('\n    ==== Compiling the C++ library ====\n\n')
         if MSVC:
             make = 'nmake -f Makefile.msvc'
-            sharedname = 'Py_agama.pyd'
-            staticname = 'Py_agama.lib'
+            sharedname = 'agamab.pyd'
+            staticname = 'agamab.lib'
         else:  # standard unix (including macos)
             make = 'make'
-            sharedname = 'Py_agama.so'
-            staticname = 'Py_agama.a'
+            sharedname = 'agamab.so'
+            staticname = 'agamab.a'
         if subprocess.call(make) != 0 or not os.path.isfile(sharedname):
             raise CompileError("Compilation failed")
         if not os.path.isdir(self.build_lib): return  # this occurs when running setup.py build_ext
         # copy the shared library and executables to the folder where the package is being built
-        distutils.file_util.copy_file('Makefile.local', os.path.join(self.build_lib, 'Py_agama'))
-        distutils.file_util.copy_file(sharedname, os.path.join(self.build_lib, 'Py_agama'))
-        distutils.file_util.copy_file(staticname, os.path.join(self.build_lib, 'Py_agama'))
-        #distutils.dir_util.copy_tree('exe', os.path.join(self.build_lib, 'Py_agama', 'exe'))
+        distutils.file_util.copy_file('Makefile.local', os.path.join(self.build_lib, 'agamab'))
+        distutils.file_util.copy_file(sharedname, os.path.join(self.build_lib, 'agamab'))
+        distutils.file_util.copy_file(staticname, os.path.join(self.build_lib, 'agamab'))
+        #distutils.dir_util.copy_tree('exe', os.path.join(self.build_lib, 'agamab', 'exe'))
         if os.path.isdir(EXTRAS_DIR):  # this contains third-party libraries built in the process
-            distutils.dir_util.copy_tree(EXTRAS_DIR, os.path.join(self.build_lib, 'Py_agama', EXTRAS_DIR), verbose=False)
+            distutils.dir_util.copy_tree(EXTRAS_DIR, os.path.join(self.build_lib, 'agamab', EXTRAS_DIR), verbose=False)
 
 
 if '-h' in sys.argv or '--help' in sys.argv: print(helpstr)
@@ -839,18 +840,18 @@ if forceYes: say('Assuming yes answers to all interactive questions\n')
 if sys.version_info[0]==3 and sys.version_info[1]>=10 and 'install' in sys.argv:
     say('If you are scared by a deprecation warning about running "setup.py install", try "pip install ." instead\n')
 distutils.core.setup(
-    name             = 'Py_agama',
+    name             = 'agamab',
     version          = '1.0',
     description      = 'Action-based galaxy modelling architecture',
     author           = 'Eugene Vasiliev',
     author_email     = 'eugvas@protonmail.com',
     license          = 'GPL,MIT,BSD',
     url              = 'https://github.com/binneyox/AGAMAb',
-    long_description = "Py_agama is the python implementation of Agamab. This is a previous version of the agama library with imporvements in the torus machinery.",
+    long_description = "agamab is the python implementation of AGAMAb. This is a previous version of the agama library with imporvements in the torus machinery.",
     requires         = ['setuptools','wheel','numpy'],
-    packages         = ['Py_agama'],
-    package_dir      = {'Py_agama': '.'},
-    package_data     = {'Py_agama': allFiles('src') +
+    packages         = ['agamab'],
+    package_dir      = {'agamab': '.'},
+    package_data     = {'agamab': allFiles('src') +
         ['Makefile', 'Makefile.msvc', 'Makefile.list', 'Makefile.local.template'] },
     ext_modules      = [distutils.extension.Extension('' , [])],
     cmdclass         = {'build_ext': MyBuildExt},
