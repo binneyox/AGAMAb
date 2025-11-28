@@ -71,7 +71,7 @@ EXP math::Matrix<double> FDfinder::derivs(double u,double Delta, double& d2p2du2
 
 //implements N-R search for umin and Delta s.t.  p_u^2=dp_u^2/du=0
 EXP double FDfinder::bestFD(double& Umin, double& d2p2du2){
-	double u=asinh(.8*Rsh/Delta0);
+	double u=asinh(.2*Rsh/Delta0);
 	double det, p2=1, p2prime=1, Delta=Delta0, fac=1;
 	int i=0;
 	while(i<20 && u>0 && (fabs(p2)>1e-4 || fabs(p2prime)>1e-4)){
@@ -79,7 +79,6 @@ EXP double FDfinder::bestFD(double& Umin, double& d2p2du2){
 		det=M0(0,0)*M0(1,1)-M0(1,0)*M0(0,1);
 		double dY0 = ( M0(1,1)*p2-M0(0,1)*p2prime)/det;
 		double dY1 = (-M0(1,0)*p2+M0(0,0)*p2prime)/det;
-		//printf("%d %g %g %g %g %g\n",i,det,p2,p2prime,u,Delta);
 		while(fabs(dY0)>.5*u){
 			dY0*=.5; dY1*=.5;
 		}
@@ -89,8 +88,11 @@ EXP double FDfinder::bestFD(double& Umin, double& d2p2du2){
 		u-=dY0; Delta-=dY1;
 		i++;
 	}
+	if(i>16){//failure
+		printf("bestFD overrun at Rsh %g %g (%g %g %g)\n",Rsh,Delta,p2,p2prime,det);
+		Umin=0; return Delta0;
+	}
 	Umin=u;
-	if(i>16) printf("bestFD overrun at Rsh %g (%g %g %g)\n",Rsh,p2,p2prime,det);
 	return Delta;
 }	
 
@@ -594,13 +596,12 @@ EXP PolarInterpolator::PolarInterpolator(const potential::BasePotential& pot,
 		int i = 0;
 		double Rsh, vR, Umin, d2pu2du2;
 		while(i<sizeE) {
-
 			Rsh = PtrShellI->getRsh(gridE[i], 0, 1/Phi0) * R_circ(pot, gridE[i]);
 			double FD = PtrShellI->getDelta(gridE[i], 0, 1/Phi0);
 			if (gridE[i] / Phi0 > 0.2 && !interp) {
 				actions::Actions Jcrit = BoxLoopTrAct(pot, gridE[i], Rsh, vR);
 				FDfinder FDf(gridE[i], Rsh, vR, FD, pot);
-				if(i==5) testFDfinder(gridE[i], Rsh, vR, FD, pot);
+				//if(i==5) testFDfinder(gridE[i], Rsh, vR, FD, pot);
 				gridFD.push_back(FDf.bestFD(Umin, d2pu2du2));
 				gridUmin.push_back(Umin);
 				const coord::ProlSph coordsys(gridFD.back());

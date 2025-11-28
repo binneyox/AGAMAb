@@ -1399,6 +1399,7 @@ namespace actions {
 		double E1=unscaleE(scaledE, invPhi0), E2=potential::E_circ(pot,L);
 		double fac = (J.Jz==0)? 0 : exp(-pow(J.Jr / J.Jz, 1.5));//fac -> 1 for shell
 		double E = fac*E2 + (1-fac)*E1;
+		if(Delta<0)Delta=1e-4*potential::R_circ(pot,E);
 		// Determine if Jphi is low so a HO should be considered
 		double Phi0; coord::HessCyl d2Phi;
 		pot.eval(coord::PosCyl(0, 0, 0), &Phi0, NULL, &d2Phi);
@@ -1413,8 +1414,8 @@ namespace actions {
 				//Choose Is unless Jz<Jzcrit & Jr>0
 				if (J.Jr == 0) ToyMapType = ToyPotType::Is;
 				else {
-					double Jzcrit = pot.getJzcrit(2*J.Jr+J.Jz);//math::evalPoly(JzcritSpl, scale(Sc,2*J.Jr+J.Jz));
-					ToyMapType = J.Jz>Jzcrit? ToyPotType::Is :
+					double Jzcrit = pot.getJzcrit(2*J.Jr+J.Jz);
+					ToyMapType = J.Jz>1.1*Jzcrit? ToyPotType::Is :
 						ToyPotType::HO;
 					if (logfile) {
 						if (ToyMapType == ToyPotType::Is)
@@ -1561,7 +1562,6 @@ namespace actions {
 			try {
 				NANbar = 0;
 				int numIter = math::nonlinearMultiFit(TF, &params[0], tolerance, maxNumIter, &params[0], &Hdisp);
-				printf("Iter %d ",numIter);
 				Hdisp = sqrt(Hdisp);
 				rep.push_back(Hdisp);
 				converged = (Hdisp < tol * freqScale * Jscale);
@@ -1588,7 +1588,7 @@ namespace actions {
 			printf("Quit early because Hvar not decreasing\n");
 			for(int i=0;i<Loop;i++) printf("%g ",rep[i]);
 		}
-		for(int i=0;i<Loop;i++) printf("%g ",rep[i]); printf("\n");
+//		for(int i=0;i<Loop;i++) printf("%g ",rep[i]); printf("\n");
 		GenFncFit GFF(indices, 2*timesr, 2*timesz, J);
 		std::string TMtype = ptrTM->getToyMapType()==ToyPotType::HO? "HO" : "Is";
 		printf("With %s TM Hdisp from %e to %e after %d expansions\n",
