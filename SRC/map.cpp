@@ -763,6 +763,7 @@ namespace actions{
 			+ dRzdrt(2, 2) * drdJ.dbyJz.pr + dRzdrt(2, 3) * drdJ.dbyJz.ptheta;
 		dRzdJ.dbyJz.pz = dRzdrt(3, 0) * drdJ.dbyJz.r + dRzdrt(3, 1) * drdJ.dbyJz.theta
 			+ dRzdrt(3, 2) * drdJ.dbyJz.pr + dRzdrt(3, 3) * drdJ.dbyJz.ptheta;
+		dRzdJ.dbyJz.pphi=0;
 		dRzdJ.dbyJphi.R = dRzdrt(0, 0) * drdJ.dbyJphi.r + dRzdrt(0, 1) * drdJ.dbyJphi.theta
 			+ dRzdrt(0, 2) * drdJ.dbyJphi.pr + dRzdrt(0, 3) * drdJ.dbyJphi.ptheta;
 		dRzdJ.dbyJphi.z = dRzdrt(1, 0) * drdJ.dbyJphi.r + dRzdrt(1, 1) * drdJ.dbyJphi.theta
@@ -799,6 +800,7 @@ namespace actions{
 			+ dRzdrt(2, 2) * drdJ.dbyJz.pR + dRzdrt(2, 3) * drdJ.dbyJz.pz;
 		dRzdJ.dbyJz.pz = dRzdrt(3, 0) * drdJ.dbyJz.R + dRzdrt(3, 1) * drdJ.dbyJz.z
 			+ dRzdrt(3, 2) * drdJ.dbyJz.pR + dRzdrt(3, 3) * drdJ.dbyJz.pz;
+		dRzdJ.dbyJz.pphi=0;
 		dRzdJ.dbyJphi.R = dRzdrt(0, 0) * drdJ.dbyJphi.R + dRzdrt(0, 1) * drdJ.dbyJphi.z
 			+ dRzdrt(0, 2) * drdJ.dbyJphi.pR + dRzdrt(0, 3) * drdJ.dbyJphi.pz;
 		dRzdJ.dbyJphi.z = dRzdrt(1, 0) * drdJ.dbyJphi.R + dRzdrt(1, 1) * drdJ.dbyJphi.z

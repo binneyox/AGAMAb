@@ -7,8 +7,8 @@ include Makefile.local
 # and contains the list of source files and folders
 include Makefile.list
 
-LIBNAME_SHARED = Py_agama.pyd
-LIBNAME_STATIC = Py_agama.lib
+LIBNAME_SHARED = agamab.pyd
+LIBNAME_STATIC = agamab.lib
 OBJECTS = $(SOURCES:.cpp=.obj)
 OBJECTS = obj/$(OBJECTS:  = obj/)
 TESTEXE = $(TESTSRCS:.cpp=.exe)
@@ -25,14 +25,18 @@ $(LIBNAME_STATIC):  $(OBJECTS) Makefile.msvc Makefile.local Makefile.list
 	lib.exe $(OBJECTS) /out:$(LIBNAME_STATIC)
 
 $(LIBNAME_SHARED):  $(OBJECTS) Makefile.msvc Makefile.local Makefile.list
-	link.exe $(OBJECTS) $(LINK_FLAGS_ALL) $(LINK_FLAGS_LIB) $(LINK_FLAGS_LIB_AND_EXE_STATIC) /dll /out:$(LIBNAME_SHARED) /implib:Py_agama_pyd.lib
-	del Py_agama_pyd.lib
-	del Py_agama_pyd.exp
+	link.exe $(OBJECTS) $(LINK_FLAGS_ALL) $(LINK_FLAGS_LIB) $(LINK_FLAGS_LIB_AND_EXE_STATIC) /dll /out:$(LIBNAME_SHARED) /implib:agamab_pyd.lib
+	del agamab_pyd.lib
+	del agamab_pyd.exp
 
 $(TESTEXE): $(LIBNAME_STATIC) Makefile.local
 
 {src}.cpp{obj}.obj:
 	$(CC) $(COMPILE_FLAGS_ALL) $(COMPILE_FLAGS_LIB) -c $< -Foobj/
+
+# statically link against agamab.lib
+{tests}.cpp{exe}.exe:
+	$(CC) -Fe: "$@" -Foobj/tmp.obj "$<" $(COMPILE_FLAGS_ALL) /link $(LIBNAME_STATIC) $(LINK_FLAGS_ALL) $(LINK_FLAGS_LIB_AND_EXE_STATIC)
 
 $(OBJDIR):
 	mkdir $(OBJDIR)
