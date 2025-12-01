@@ -1,8 +1,8 @@
 # set up folder names
-SRCDIR    = src
+SRCDIR    = SRC
 OBJDIR    = obj
 EXEDIR    = exe
-TESTSDIR  = tests
+TESTSDIR  = examples
 
 # sources of the main library
 SOURCES   = \
@@ -20,6 +20,7 @@ SOURCES   = \
             math_sphharm.cpp \
             math_spline.cpp \
             particles_io.cpp \
+	    actions_focal_distance_finder.cpp \
 	    actions_harmonicoscillator.cpp \
             actions_newisochrone.cpp \
 	    actions_newgenfnc.cpp \
@@ -65,4 +66,5 @@ SOURCES   = \
             utils.cpp \
             utils_config.cpp
 # test and example programs
-TESTSRCS  = test_actions.cpp
+TESTSRCS  = testTorusGenerator.cpp \
+	    testAFTG.cpp
