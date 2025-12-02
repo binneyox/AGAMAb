@@ -568,7 +568,7 @@ PyInit_agamatest(void) {
             filename = 'gsl.tar.gz'
             dirname  = 'gsl-2.8'
             try:
-                urlretrieve('https://ftp.gnu.org/gnu/gsl/gsl-2.8.tar.gz', filename)
+                urlretrieve('https://ftpmirror.gnu.org/gnu/gsl/gsl-2.8.tar.gz', filename)
                 if os.path.isfile(filename):
                     say('Unpacking GSL\n')
                     subprocess.call(['tar', '-zxf', filename])    # unpack the archive
@@ -813,20 +813,24 @@ class MyBuildExt(CmdBuildExt):
             make = 'nmake -f Makefile.msvc'
             sharedname = 'agamab.pyd'
             staticname = 'agamab.lib'
+            sharednamepy='Py_agama.pyd'
+            staticnamepy='Py_agama.lib'
         else:  # standard unix (including macos)
             make = 'make'
             sharedname = 'agamab.so'
             staticname = 'agamab.a'
+            sharednamepy = 'Py_agama.so'
+            staticnamepy = 'Py_agama.a'
         if subprocess.call(make) != 0 or not os.path.isfile(sharedname):
             raise CompileError("Compilation failed")
         if not os.path.isdir(self.build_lib): return  # this occurs when running setup.py build_ext
         # copy the shared library and executables to the folder where the package is being built
-        distutils.file_util.copy_file('Makefile.local', os.path.join(self.build_lib, 'agamab'))
-        distutils.file_util.copy_file(sharedname, os.path.join(self.build_lib, 'agamab'))
-        distutils.file_util.copy_file(staticname, os.path.join(self.build_lib, 'agamab'))
+        distutils.file_util.copy_file('Makefile.local', os.path.join(self.build_lib, 'Py_agama'))
+        distutils.file_util.copy_file(sharedname, os.path.join(self.build_lib, 'Py_agama')+"/"+sharednamepy)
+        distutils.file_util.copy_file(staticname, os.path.join(self.build_lib, 'Py_agama')+"/"+staticnamepy)
         #distutils.dir_util.copy_tree('exe', os.path.join(self.build_lib, 'agamab', 'exe'))
         if os.path.isdir(EXTRAS_DIR):  # this contains third-party libraries built in the process
-            distutils.dir_util.copy_tree(EXTRAS_DIR, os.path.join(self.build_lib, 'agamab', EXTRAS_DIR), verbose=False)
+            distutils.dir_util.copy_tree(EXTRAS_DIR, os.path.join(self.build_lib, 'Py_agama', EXTRAS_DIR), verbose=False)
 
 
 if '-h' in sys.argv or '--help' in sys.argv: print(helpstr)
@@ -840,18 +844,18 @@ if forceYes: say('Assuming yes answers to all interactive questions\n')
 if sys.version_info[0]==3 and sys.version_info[1]>=10 and 'install' in sys.argv:
     say('If you are scared by a deprecation warning about running "setup.py install", try "pip install ." instead\n')
 distutils.core.setup(
-    name             = 'agamab',
+    name             = 'Py_agama',
     version          = '1.0',
     description      = 'Action-based galaxy modelling architecture',
     author           = 'Eugene Vasiliev',
     author_email     = 'eugvas@protonmail.com',
     license          = 'GPL,MIT,BSD',
     url              = 'https://github.com/binneyox/AGAMAb',
-    long_description = "agamab is the python implementation of AGAMAb. This is a previous version of the agama library with imporvements in the torus machinery.",
+    long_description = "Py_agama is the python implementation of AGAMAb. This is a previous version of the agama library with imporvements in the torus machinery.",
     requires         = ['setuptools','wheel','numpy'],
-    packages         = ['agamab'],
-    package_dir      = {'agamab': '.'},
-    package_data     = {'agamab': allFiles('src') +
+    packages         = ['Py_agama'],
+    package_dir      = {'Py_agama': '.'},
+    package_data     = {'Py_agama': allFiles('src') +
         ['Makefile', 'Makefile.msvc', 'Makefile.list', 'Makefile.local.template'] },
     ext_modules      = [distutils.extension.Extension('' , [])],
     cmdclass         = {'build_ext': MyBuildExt},
