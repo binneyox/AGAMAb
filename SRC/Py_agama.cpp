@@ -27,7 +27,7 @@
 #define PYAGAMA_VERSION "1.0"
 namespace py = pybind11;
 using namespace pybind11::literals;
-PYBIND11_MODULE(agamab, m) {
+PYBIND11_MODULE(Py_agama, m) {
     m.attr("__version__") = PYAGAMA_VERSION;
     py::class_<utils::KeyValueMap>(m,"KeyValueMap")
         .def(py::init<>())

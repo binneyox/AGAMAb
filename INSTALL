@@ -1,8 +1,54 @@
 This is the AGAMAb galaxy modelling framework. To get it working on your computer:
 
-Download https://github.com/GalacticDynamics-Oxford/Agamab
+Download https://github.com/binneyox/Agamab
 
-There are two alternative ways of building and installing the library:
+AGAMAb is  a library of routines. On a linux system this can be compiled into
+a file agamab.so or a file agamab.a: the former is a `shared library' from
+which the user program draws code at runtime, while the latter is a `static
+library' from which code is copied into the user's executable by the linker.
+Linking to agamab.a creates bigger executables but these executables are
+self-contained and can be run on a machine that doesn't have agamab. 
+
+On Windows agamab is compiled into two files, agamab.dll and agamab.lib. The
+linker always  looks in agamab.lib but it doesn't copy out much code - code
+is taken as needed from agamab.dll at run time. A Windows machine does
+essentially the same thing as a Linux one running in dynamic mode, except
+that the Linux linker looks in agamab.so rather than agamab.lib.
+
+The run-time files agamab.so or agamab.dll have to lie in a folder that's
+included in the PATH environment variable. The files used by the linker
+should be specified by the command line that invokes the linker (on
+Windows  link mypgm.obj agamab.lib /LIBPATH c:\myAgamaFolder)
+
+If you want to use AGAMAb routines from Python, you need to compile
+Py_agama.cpp into Py_agama.so (Linux) or Py_agama.pyd (Windows) then copy
+this file to the folder pointed to by the environment variable PYTHONPATH.
+The linker will need to access agamab.so (Linux) or agamab.lib (Windows) as
+when linking any program that uses AGAMAb. Finally, put the supplied file
+__init__.py in a sub-folder agamab of the one to which PYTHONPATH points.
+When a Python program encounters 'import agamab as AG' __init__.py will be
+opened and the Py_agama.so or Py_agama.pyd file will be loaded. On a Windows
+machine __init__.py needs also a os.add_dll_directory(..) line to tell Python
+where to find agamab.dll.
+
+On a Linux machine AGAMAb can be embodied in a single file agamab.so by
+adding Py_agama.cpp to the list of cpp files for compilation; the resulting
+file agamab.so can be used both to link with a cpp program or imported into
+Python.
+   
+Much of AGAMAb has been developed on a Windows machine using the MS Visual
+Studio IDE because the IDE remakes agamab.dll and agamab.lib remarkably quickly
+when any file has been changed. To use the IDE, start a new project (agamab
+or Py_agma) and add to it all relevant cpp and h files. Go to the bottom of
+the Project tab and select Properties. Under General Properties, choose an
+output directory, type of exectable (dll). Under Advanced set Target Fille
+Extension to .pyd if making Pyagama.pyd. Under C/C++General set Additional
+Include Directories and yes to Multi-processor Compilation. Under
+C/C++Precompiled Headers choose Not Using Precompiled Headers.  Then you
+should be able to compile from the Build tab. 
+
+
+There are two ways of building and installing the library without the IDE:
 - automatic, using the provided script setup.py (preferred)
 - manual
 

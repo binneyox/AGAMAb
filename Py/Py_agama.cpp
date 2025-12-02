@@ -950,14 +950,28 @@ PYBIND11_MODULE(Py_agama, m) {
     const int maxNumEval=1000000){
         py::list ls;
         int dflen=seperate?model.distrFunc.numValues():1;
-        std::vector<double> density,amplVR,amplVz,amplVphi;
-        galaxymodel::computeVelocityDistributionO3(model,point,projected,gridVR,gridVz,gridVphi,&density[0],
+        std::vector<double> amplVR,amplVz,amplVphi;
+        if(dflen==1){
+            double density;
+            galaxymodel::computeVelocityDistributionO3(model,point,projected,gridVR,gridVz,gridVphi,&density,
             &amplVR,&amplVz,&amplVphi,seperate,reqRelError,maxNumEval);
-        ls.append(density);
-        ls.append(amplVR);
-        ls.append(amplVphi); 
-        ls.append(amplVz);
-        return ls;
+            ls.append(density);
+            ls.append(amplVR);
+            ls.append(amplVphi); 
+            ls.append(amplVz);
+            return ls;
+        }
+        else{
+            std::vector<double> density(dflen);
+            galaxymodel::computeVelocityDistributionO3(model,point,projected,gridVR,gridVz,gridVphi,&density[0],
+            &amplVR,&amplVz,&amplVphi,seperate,reqRelError,maxNumEval);
+            ls.append(density);
+            ls.append(amplVR);
+            ls.append(amplVphi); 
+            ls.append(amplVz);
+            return ls;
+        }
+        
 
     },"model"_a,"point"_a,"projected"_a,"gridVR"_a,"gridVphi"_a,"gridVz"_a,"seperate"_a=false,"reqRelError"_a=(0.01),"maxNumEval"_a=1000000);
 }
