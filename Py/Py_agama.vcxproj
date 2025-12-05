@@ -83,6 +83,8 @@
     <LinkIncremental>false</LinkIncremental>
     <TargetExt>.pyd</TargetExt>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);L:;h:\python-3.9.6\include;h:\python-3.9.6\PC;</IncludePath>
+    <OutDir>k:\agamab</OutDir>
+    <TargetName>agamab</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -146,6 +148,9 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>h:\u\c\agama\agama</AdditionalIncludeDirectories>
+      <EnableParallelCodeGeneration>Yes</EnableParallelCodeGeneration>
+      <OpenMPSupport>
+      </OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
