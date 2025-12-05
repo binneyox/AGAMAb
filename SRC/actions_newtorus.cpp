@@ -700,14 +700,14 @@ namespace actions {
 				int nr, nz;
 				int np;
 				Actions J;
-				HarmonicOscilattor os;
+				HarmonicOscilator os;
 				const potential::BasePotential& pot;
 				math::ScalingInfTh sc;
 				math::ScalingInfTh scz;
 				double delta;
 			public:
 				fitmapHarm(const int _N, const int _Nr, Actions _J,
-					   HarmonicOscilattor _os,
+					   HarmonicOscilator _os,
 					   const potential::BasePotential& _pot, double _R0, double _z0, double _delta)
 						: N(_N),Nr(_Nr), N1(_Nr + _N), nr(100), nz(100), np(100 * 100),
 				J(_J), os(_os), pot(_pot), sc(_R0), scz(_z0), delta(_delta)
@@ -1439,7 +1439,7 @@ namespace actions {
 			//Now choose isochrone
 			//For any Js b=Rsh/ISO.g(Js) f_apo_peri=ISO.f(b.Js,e) & where
 			//this matches F_apo_peri in pot we pick Js and b
-			double Rs = (1.1*Rmax * (1 - fac) + 2*fac*Rsh);
+			double Rs = 2*(Rmax * (1 - fac) + fac*Rsh);
 			Iso ISO(L, J.Jr);
 			double Jsmax = 1.1 * Jtot, Jsmin = .1 * Jsmax;
 			JsFinder JF(pot, ISO,Rsh);
@@ -1483,8 +1483,12 @@ namespace actions {
 			double omegaR = J1 * (1 + e) * ((1 - fac) / pow_2(Rmax)
 				+ fac / pow_2(Rsh));
 			double X = 2 / M_PI * Rsh * J.Jz / (J.Jz + fabs(J.Jphi));
-			double omegaz = 2 * J.Jz / pow_2(X) * fac + (1 - fac) * omegaR;
-			HarmonicOscilattor os(omegaR, omegaz);
+			coord::HessCyl d2PhiRsh;
+			pot.eval(coord::PosCyl(Rsh,0,0),NULL,NULL,&d2PhiRsh);
+			//For staeckel potential for Jz small/ small motion in v axis ensure that Jz is correct.
+			double omega1=omegaR;//d2PhiRsh.dz2>0?sqrt(d2PhiRsh.dz2*(pow_2(Delta)+pow_2(Rsh)))/Rs:omegaR;
+			double omegaz = 2 * J.Jz / pow_2(X) * fac + (1 - fac) * omega1;
+			HarmonicOscilator os(omegaR, omegaz);
 			fitmapHarm fm(Nn, Nnr, J, os, pot, Rs, Rs, Delta);
 			//now choose Fourier coeffs
 			std::vector<double> params2(Nn + Nnr, 0.0);
@@ -1548,7 +1552,7 @@ namespace actions {
 		double tol = defaultTol * tighten;
 		double Hbar, Hdisp = 1e20, Htarget = tol * freqScale * Jscale;
 		bool converged = false;
-		int Loop = 0, MaxLoop = 7, maxNumIter = 50;
+		int Loop = 0, MaxLoop = 12, maxNumIter = 20;
 		bool stuck = false;
 		std::vector<double> rep;
 		rep.push_back(HdispTM);
@@ -1599,6 +1603,9 @@ namespace actions {
 			fprintf(logfile, "%zd terms", indices.size());
 			fprintf(logfile, "\nNANfracs: %f %f, resids:\n", NANfrac, NANbar);
 			for (int i = 0; i < rep.size(); i++) fprintf(logfile, "%7.2e ", rep[i]); printf("\n");
+		}
+		else{
+			fprintf(logfile,"\nConverged after %d iterations",Loop+1);
 		}
 		torusFitter TF(J, pot, freqScale, ptrTM, GFF);
 		Frequencies freqs;

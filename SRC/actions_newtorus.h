@@ -173,8 +173,7 @@ namespace actions {
 				   const ToyPotType ToyMapType=ToyPotType::None) const;
 		/* Build a torus with all Sn=0 around the given ToyMap */
 		Torus giveBaseTorus(const Actions&, const PtrToyMap&) const;
-		/* fitFrom uses given TM & varies Sn starting from given values
-		*/
+		/* fitFrom uses given TM & varies Sn starting from given values	*/
 		Torus fitFrom(const Actions&, const Torus&, const double tighten = 1) const;
 		eTorus fiteTorus(const Actions&, const potential::BasePotential* _addPhi = NULL);
 		eTorus fiteTorus(const Actions&, const double, const potential::BasePotential* _addPhi = NULL);

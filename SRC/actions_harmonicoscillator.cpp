@@ -1,12 +1,12 @@
 #include "actions_harmonicoscillator.h"
 
 namespace actions {
-	double HarmonicOscilattor::H(coord::PosMomCyl& rp) const {
+	double HarmonicOscilator::H(coord::PosMomCyl& rp) const {
 		double H = .5 * (pow_2(rp.pR) + pow_2(rp.pz))
 			+ .5 * (pow_2(omegaR * rp.R) + pow_2(omegaz * rp.z));
 		return rp.pphi == 0 ? H : H + .5 * pow_2(rp.pphi / (rp.R));
 	}
-	Actions HarmonicOscilattor::pq2J(const coord::PosMomCyl& pc) const {
+	Actions HarmonicOscilator::pq2J(const coord::PosMomCyl& pc) const {
 		double Jz = .5 * (pow_2(pc.pz) + pow_2(omegaz * pc.z)) / omegaz;
 		double HR = .5 * (pow_2(pc.pR))
 			+ .5 * (pow_2(omegaR * pc.R));
@@ -14,7 +14,7 @@ namespace actions {
 		double Jr = .5 * (HR / omegaR - fabs(pc.pphi));
 		return Actions(Jr, Jz, pc.pphi);
 	}
-	coord::PosMomCyl HarmonicOscilattor::aa2pq(const ActionAngles& aa, Frequencies* freqs,
+	coord::PosMomCyl HarmonicOscilator::aa2pq(const ActionAngles& aa, Frequencies* freqs,
 		DerivAct<coord::Cyl>* dJ, DerivAng<coord::Cyl>* dA) const {
 		double z = sqrt(2 * aa.Jz / omegaz) * sin(aa.thetaz);
 		double pz = sqrt(2 * aa.Jz * omegaz) * cos(aa.thetaz);
@@ -93,7 +93,7 @@ namespace actions {
 		}
 		return xpcyl;
 	}
-	coord::PosMomCar HarmonicOscilattor::aa2pqCar(const ActionAngles& aa, Frequencies* freqs,
+	coord::PosMomCar HarmonicOscilator::aa2pqCar(const ActionAngles& aa, Frequencies* freqs,
 		DerivAct<coord::Car>* dJ, DerivAng<coord::Car>* dA) const {
 		double z = sqrt(2 * aa.Jz / omegaz) * sin(aa.thetaz);
 		double pz = sqrt(2 * aa.Jz * omegaz) * cos(aa.thetaz);
@@ -156,7 +156,7 @@ namespace actions {
 		}
 		return xpcar;
 	}
-	ActionAngles HarmonicOscilattor::pq2aa(const coord::PosMomCyl& pc, Frequencies* freqs) const {
+	ActionAngles HarmonicOscilator::pq2aa(const coord::PosMomCyl& pc, Frequencies* freqs) const {
 		double Jz = .5 *  (pow_2(pc.pz) + pow_2(omegaz * pc.z))/omegaz;
 		double HR = .5 * (pow_2(pc.pR))
 			+ .5 * (pow_2(omegaR * pc.R));
@@ -177,7 +177,7 @@ namespace actions {
 		if (freqs)*freqs = Frequencies(2. * omegaR, omegaz, omegaR * math::sign(pc.pphi));
 		return aa;
 	}
-	coord::PosMomCyl HarmonicOscilattor::aa2pq(const ActionAngles& aa,
+	coord::PosMomCyl HarmonicOscilator::aa2pq(const ActionAngles& aa,
 		coord::PosMomCyl& drdomegar, coord::PosMomCyl& drdomegaz) const {
 		double z = sqrt(2 * aa.Jz / omegaz) * sin(aa.thetaz);
 		double pz = sqrt(2 * aa.Jz * omegaz) * cos(aa.thetaz);
@@ -198,7 +198,7 @@ namespace actions {
 		drdomegaz = coord::PosMomCyl(0, dzdomegaz, 0.0, 0.0, dpzdomegaz, 0.0);
 		return xpcyl;
 	}
-	coord::PosMomCar HarmonicOscilattor::aa2pq(const ActionAngles& aa,
+	coord::PosMomCar HarmonicOscilator::aa2pq(const ActionAngles& aa,
 		coord::PosMomCar& drdomegar, coord::PosMomCar& drdomegaz) const {
 		double z = sqrt(2 * aa.Jz / omegaz) * sin(aa.thetaz);
 		double pz = sqrt(2 * aa.Jz * omegaz) * cos(aa.thetaz);
@@ -213,7 +213,7 @@ namespace actions {
 		drdomegaz = coord::PosMomCar(0, 0, dzdomegaz, 0.0, 0.0, dpzdomegaz);
 		return xv;
 	}
-	coord::PosMomCar HarmonicOscilattor::aa2pqCar(const ActionAngles& aa,
+	coord::PosMomCar HarmonicOscilator::aa2pqCar(const ActionAngles& aa,
 		coord::PosMomCar& drdomegar, coord::PosMomCar& drdomegaz) const {
 		double z = sqrt(2 * aa.Jz / omegaz) * sin(aa.thetaz);
 		double pz = sqrt(2 * aa.Jz * omegaz) * cos(aa.thetaz);
@@ -229,8 +229,8 @@ namespace actions {
 		return  xpcar;
 
 	}
-	HarmonicOscilattor interpHarmonicOscillator(const double x, const HarmonicOscilattor& os0, const HarmonicOscilattor& os1) {
+	HarmonicOscilator interpHarmonicOscilator(const double x, const HarmonicOscilator& os0, const HarmonicOscilator& os1) {
 		const double xp = 1 - x;
-		return HarmonicOscilattor(os0.omegaR * x + os1.omegaR * xp, os0.omegaz * x + os1.omegaR * xp);
+		return HarmonicOscilator(os0.omegaR * x + os1.omegaR * xp, os0.omegaz * x + os1.omegaR * xp);
 	}
 }//namespace actions

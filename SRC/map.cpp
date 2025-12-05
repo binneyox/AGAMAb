@@ -103,10 +103,10 @@ namespace actions{
             int sgn=math::sign(rn);
             drFds*=sc.x0;
             d2rFds2*=sc.x0;
-            if(ddrndrdFC){
+            if(drndFC||ddrndrdFC){
                 for(int i=0;i<values.size();i++){
-                    drndFC[i]*=sc.x0*sgn;
-                    ddrndrdFC[i]*=dsdr*sgn*sc.x0;
+                    if(drndFC)drndFC[i]*=sc.x0*sgn;
+                    if(ddrndrdFC)ddrndrdFC[i]*=dsdr*sgn*sc.x0;
                 }
             }
             if (drndr)*drndr = (1 + drFds * dsdr)*sgn;
@@ -664,8 +664,8 @@ namespace actions{
 				return PtrToyMap(new ToyMapIso(interpIsochrone(x, Is0, Is1),interpPTIso(x,PTIs0,PTIs1)));
 			}
 			else if(PtrTM0->getToyMapType()==ToyPotType::HO){
-				HarmonicOscilattor HOs0(val1,val2);
-				HarmonicOscilattor HOs1(valn1,valn2);
+				HarmonicOscilator HOs0(val1,val2);
+				HarmonicOscilator HOs1(valn1,valn2);
 				PtrPointTransform PtrPT0=interpPointTrans(x,PtrTM0->getPointTrans(),PtrTM1->getPointTrans());
 				PtrPointTransform PtrPT1=PtrTM1->getPointTrans();
 				double par0[3];
@@ -680,7 +680,7 @@ namespace actions{
 				PtrPT1->getParams(par1,&pr1[0],&p1[0]);
 				math::ScalingInfTh sc1(par1[1]), scz1(par1[2]);
 				PTHarm PTH1(par1[0],sc1,scz1,p1,pr1);
-				return PtrToyMap(new ToyMapHarm(interpHarmonicOscillator(x, HOs0, HOs1),interpPTHarm(x,PTH0,PTH1)));
+				return PtrToyMap(new ToyMapHarm(interpHarmonicOscilator(x, HOs0, HOs1),interpPTHarm(x,PTH0,PTH1)));
 			}
 		}
 		printf("Error:cannot interpolate between a Harmonic oscillator and Isochrone Toy Map.\n");
