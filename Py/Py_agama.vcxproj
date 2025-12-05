@@ -82,7 +82,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetExt>.pyd</TargetExt>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);L:;h:\python-3.9.6\include;h:\python-3.9.6\PC;</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);k:\pybind11;h:\python-3.9.6\include;h:\python-3.9.6\PC;</IncludePath>
     <OutDir>k:\agamab</OutDir>
     <TargetName>agamab</TargetName>
   </PropertyGroup>
