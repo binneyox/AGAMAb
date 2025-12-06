@@ -1,55 +1,76 @@
 \input pmacro \reportformat
 \centerline{\titlefont Compiling AGAMA with MS Visual Studio}
 
-\bigskip\noindent
-Here I explain how to get the  AGAMA (or AGAMAb) package (Action-based  Galaxy
-Modelling Framework) running with Microsoft's freely-distributed `Visual Studio'
-compiler. This is essential if you want to run AGAMA under
-Windows because it is impossible to compile either Python or the Gnu
-Scientific Library with the Gnu compilers, and a single compiler must compile all
-components of a code.
+\bigskip\noindent Here I explain how to get the AGAMAb package (Action-based
+Galaxy Modelling Framework) running with Microsoft's freely-distributed
+`Visual Studio' compiler. This is essential if you want to run AGAMA under
+Windows because it is impossible to compile Python with the Gnu compilers,
+and a single compiler must compile all components of a code.
 
 Instructions for installing GSL can be found at
 
 \noindent https://solarianprogrammer.com/2020/01/26/getting-started-gsl-gnu-scientific-library-windows-macos-linux/
 
-In a Linux/Gnu environment, AGAMA is embodied in shared library {\tt agama.so}. Under
-VS it is contained in two files {\tt agama.lib} and {\tt agama.dll}. The former is
+In a Linux/Gnu environment, AGAMA is embodied in shared library {\tt agamab.so}. Under
+VS it is contained in two files {\tt agamab.lib} and {\tt agamab.dll}. The former is
 what the linker uses, while the latter is required at runtime, so has to lie
 on your {\tt path}. I have the following file {\tt vscl.bat} on my {\tt path}
 so I can compile and link a program {\tt testit.cpp} that uses AGAMA by
 typing {\tt vscl testit}
 \begintt
 @echo off
-cl.exe /c /openmp /I\u\c\agamab\src -EHsc %1.cpp
+cl.exe /c /openmp /I\u\c\agamab\src -EHsc /std:c++20 %1.cpp
 @if not %ERRORLEVEL% == 0 (goto end)
-link %1.obj agama.lib /LIBPATH:\u\c\agamab\src\x64\release /NOIMPLIB
+link %1.obj agamab.lib /LIBPATH:\u\c\agamab\src\x64\release /NOIMPLIB
 del %1.obj
 del %1.exp
 :end
 \endtt
- What follows {\tt /I} in the second line is the path to my AGAMA source code
+ What follows {\tt /I} in the second line is the path to my AGAMAb source code
 \& what follows {\tt LIBPATH:} in the fourth line is the path to {\tt
-agama.lib}. That's where the VS IDE put it: I used the VS IDE to compile
-AGAMA rather than hacking the file {\tt makefile.local} distributed with
-AGAMA and using {\tt make}. The IDE handles access to the Gnu Scientific
+agamab.lib}. That's where the VS IDE put it: I used the VS IDE to compile
+AGAMAb rather than hacking the file {\tt makefile.local} distributed with
+AGAMA and using {\tt make}. The IDE remakes faster than {\tt make} did when I
+used the Gnu compilers. It manages access to the Gnu Scientific
 Library and Python if they were installed using the {\tt vcpkg} utility.  The
-last {\tt del} command is necessary because VS insists on producing an
+last {\tt del} command above is necessary because VS insists on producing an
 `export' library file {\tt.exp} even when told to make an executable. 
 
-\bigskip\centerline{\bf Installing AGAMA with the MSVS IDE}
+\bigskip\centerline{\bf Installing AGAMAb with the MSVS IDE}
 
-\noindent Clone the GitHub repository and start the Visual
-Studio IDE and via the  File tab  open {\tt agama.sln} (sln stands for `solution') within the
-source directory. Then provided you've installed the Gnu Scientific Library
+\noindent Clone the GitHub repository, delete {\tt src$\backslash$Py\_agama.cpp} and
+then copy into {\tt src} the contents of {\tt ..$\backslash$windows}. Start the Visual
+Studio IDE and  click to open ‘a project or solution’.
+Navigate to the src folder and click on  {\tt agamab.sln} (sln stands for
+`solution'). Go to the bottom of  the 'project'  drop-down menu and click on
+'Properties' to review choices. There's probably no need to change anything,
+but here's a list of things you might change:
+
+\item{$\bullet$}{\bf Configuration Properties: General}
+the compiler will put the {\tt .obj} files in the Output File,
+which by default is the {\tt $\backslash$x64$\backslash$release} subfolder of
+{\tt src}. Probably leave it like that.
+
+
+\item{$\bullet$} {\bf Configuration Properties: Advanced}: 'Target File Extension' should be {\tt .dll}
+
+\item{$\bullet$}{\bf Linker: General} 'Output File' you might want to change the
+destination of the {\tt.dll} file that is required at runtime - it must be on
+your {\tt path}. By default it will go to the {\tt x64$\backslash$release}  subfolder.
+
+\item{$\bullet$}{\bf Linker: Input} 'Additional dependencies': probably leave the long list of system
+libraries alone
+
+\item{$\bullet$}{\bf Linker: Advanced} 'Import library' you might want to change the
+destination of the {\tt.lib} file that will be used when you link a program to
+AGAMAb. By default it will go to the {\tt x64$\backslash$release}  subfolder.
+
+Then provided you've installed the Gnu Scientific Library
 within VS, you should be able to `build agama' from within the `build' tab of
 the VS IDL. VS is a bossy compiler so there will be zillions of warnings. It
 will even declare an error on correct code, such one using {\tt fopen} rather
 than {\tt fopen\_s}.  It's easier to identify any errors if you use the
 drop-down menu at the top centre of the error list to change to `Build only'.
-
-You may need to set some compiler options. At the bottom of the Project tab, click on
-Properties. Then click on C/C++ and by clicking on open MP support get Yes (/openmp)
 
 After building AGAMA with Visual Studio Community 2019, Version 16.9.2 I
 tested the procedure for installing AGAMA by transferring the code to an
@@ -62,11 +83,7 @@ typing in {\tt /Zc:twoPhase-} at the bottom.  This click sequence could also
 be used to establish what the compiler and linker flags should be if you
 prefer to hack {\tt makefile.local} rather than using the IDE.
 
-Among the many outputs of an error-free compilation will be {\tt agama.dll},
-which you need to copy to a folder that lies on your path, and {\tt
-agama.lib}. The outputs will be in {\tt x64$\backslash$release} or {\tt
-x64$\backslash$debug} if you've set VS to debugging (top left centre of IDE).
-Here I'm assuming that you have a 64-bit machine and that you will be running
+ I've assumed that you have a 64-bit machine and that you will be running
 the code from the `x64 Native Tools Command Prompt' that should be in your
 Visual Studio folder on your start menu. If you have a 32-bit machine, change
 the IDE from `x64' to `x86' at the top. 
@@ -74,27 +91,27 @@ the IDE from `x64' to `x86' at the top.
 The following lines in a makefile
 \begintt
 ASRC = \u\c\agamab\src
-ALIB  = \u\c\agamab\src\x64\release\agama.lib
-ADLL  = \u\c\agamab\src\x64\release\agama.dll
+ALIB  = \u\c\agamab\src\x64\release\agamab.lib
+ADLL  = \u\c\agamab\src\x64\release\agamab.dll
 testit.exe: testit.cpp  $(ALIB) $(ADLL) other.obj
 	cl /openmp /I$(ASRC) -EHsc testit.cpp /link /out:testit.exe NOIMPLIB \ 
 	other.obj \libs\press.lib $(ALIB)
 \endtt
  will update testit.exe when any of {\tt testit.cpp}, {\tt other.obj} or
-AGAMA is changed. {\tt testit} will be linked to AGAMA, other.obj and the
+AGAMAb is changed. {\tt testit} will be linked to AGAMAb, other.obj and the
 static library {\tt$\backslash$libs$\backslash$press.lib}. The words before
 {\tt/link} are instructions to the compiler, while those after are
 instructions to the linker.
 
-For some reason VS doesn't put any symbols from the dll it is constructing
+For some reason VS doesn't put any symbols from the {\tt .dll} it is constructing
 into the {\tt.lib} file unless explicitly instructed to do so. So any symbol
-you want to reference from code that's not in the AGAMA library has to have
-its name decorated by {\tt \_\_declspec(dllexport)}. I've done this for most
-routines in the AGAMA library by putting
+you want to reference from code that's not in the AGAMAb library has to have
+its name decorated by {\tt \_\_declspec(dllexport)}. This is handled by
+widely
+including {\tt os.h} which has the line 
 
 {\tt\#define EXP \_\_declspec(dllexport)}
 
-\noindent into the file {\tt os.h} that is included by key header files. 
 Then  {\tt EXP} is added at
 appropriate places. In the case of a class, one writes
 
@@ -129,13 +146,11 @@ decorated, it will be missing from the {\tt.lib} file and the linker will
 report `unresolved symbols'. 
 
 
-\bsk
-\line{James Binney\hfil May 2021 -- Nov 2025}
 \vfill\eject
 
 \centerline{\titlefont Implementing the Python wrappers on Windows}
 \msk\noindent
- Access to much of the AGAMA code from Python has been achieved via the
+ Access to much of the AGAMAb code from Python has been achieved via the
 PYBIND11 package. If you want to use our wrappers, your first step should be
 to install PYBIND11 by typing at a command prompt
 
@@ -155,16 +170,45 @@ from .agamab import *
 \endtt
 Edit the bit in quotes to the path to {\tt agamab.dll} and
 {\tt gsl.dll} on your machine (if they are in separate folders, use two {\tt
-os.add\_dll} statements).
+os.add\_dll} statements). Note the period before {\tt agamab} after {\tt
+from}: this forces Python to load {\tt agamab$\backslash$agamab.pyd} rather than again
+opening {\tt agamab$\backslash$\_\_init\_\_.py}.
 
-Copy our files {Py\_agama.cpp} and {Py\_agama.sln} into a folder and start a
-new project in VS by navigating to this folder and clicking on
-{Py\_agama.sln}. Now build the solution. This should yield {\tt
-agamab.pyd} in the {\tt agamab} folder on the {\tt PYTHONPATH}.
+Within the IDE close the agamab project and open another project by
+navigating to the {\tt py} folder and clicking on {Py\_agama.sln}.  Go to the
+bottom of the ‘project’ drop-down menu and click on ‘Properties’ to review
+choices. 
+
+\item{$\bullet$}{\bf General: Output Directory} change this to the {\tt agamab} subfolder of the
+folder that PYTHONPATH points to: I've assigned this to the root of drive
+{\tt k:}.
+
+\item{$\bullet$}{\bf General: TargetName} should be  {\tt agamab}. 
+
+\item{$\bullet$}{\bf General: Configuration Type} 
+should be Dynamic Library. 
+
+\item{$\bullet$}{\bf Advanced: Target File Extension} should be {\tt .pyd}
+
+\item{$\bullet$}{\bf VC++ Directories: Include Directories}   must
+include the py\_bind11 and python directories: with {\tt k:} pointing to the
+PYTHONPATH folder, pybind11 is at {\tt k:$\backslash$pybind11} 
+
+\item{$\bullet$}{\bf C/C++} Additional Include Directories must cover the {\tt
+agamab$\backslash$src} folder where AGAMAb’s
+header files are located
+
+\item{$\bullet$}{\bf Linker: Additional Library
+Directories} must cover the location of the Python library and the location of
+{\tt agamab.lib}
+
+\noindent
+After the review of 'Propeties', the ‘build’ tab should put agamab.pyd in the agamab
+subfolder at the end of PYTHONPATH.  You should now be able to
+
+{\tt import agamab as whatever}
+
 
 \bsk
-\line{James Binney \& Tom Wright\hfil December 2025}
-
-
-
+\line{James Binney\hfil May 2021 -- Nov 2025}
 \bye 

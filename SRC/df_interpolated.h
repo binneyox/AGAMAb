@@ -39,12 +39,18 @@ public:
         const std::vector<double> &gridW,
         const std::vector<double> &amplitudes = std::vector<double>());
 
+    virtual double value(const actions::Actions &J, const double Jrcrit) const{
+        return value(J);
+    }
     /// the value of interpolated DF at the given actions
     virtual double value(const actions::Actions &J) const;
 
     /// the number of components in the interpolation array
     virtual unsigned int numValues() const { return amplitudes.size(); }
 
+    virtual void eval(const actions::Actions &J, double Jrcrit, double values[]) const{
+        eval(J,values);    
+    }
     /// values of all components at the given actions reported separately
     virtual void eval(const actions::Actions &J, double values[]) const;
 

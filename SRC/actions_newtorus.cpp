@@ -5,7 +5,7 @@
 #endif
 
 /// accuracy parameter determining the spacing of the interpolation grid along the energy axis
-static const double ACCURACY_INTERP2 = 1e-5;
+//static const double ACCURACY_INTERP2 = 1e-5;
 
 namespace actions {
 
@@ -700,14 +700,14 @@ namespace actions {
 				int nr, nz;
 				int np;
 				Actions J;
-				HarmonicOscilator os;
+				HarmonicOscillator os;
 				const potential::BasePotential& pot;
 				math::ScalingInfTh sc;
 				math::ScalingInfTh scz;
 				double delta;
 			public:
 				fitmapHarm(const int _N, const int _Nr, Actions _J,
-					   HarmonicOscilator _os,
+					   HarmonicOscillator _os,
 					   const potential::BasePotential& _pot, double _R0, double _z0, double _delta)
 						: N(_N),Nr(_Nr), N1(_Nr + _N), nr(100), nz(100), np(100 * 100),
 				J(_J), os(_os), pot(_pot), sc(_R0), scz(_z0), delta(_delta)
@@ -830,13 +830,13 @@ namespace actions {
 		Torus T0n=T0, T1n=T1;
 		if(T0.ptrTM->getToyMapType() != T1.ptrTM->getToyMapType() ||
 		   T0.ptrTM->getToyMapType() == ToyPotType::None){
-			printf("Different map types\n");
+			//printf("Different map types\n");
 			if(T0.ptrTM->getToyMapType() != ToyPotType::HO){
-				printf("fitting HO to T0\n"); 
+				//printf("fitting HO to T0\n"); 
 				T0n = fitTorus(T0.J,1,ToyPotType::HO);
 			}
 			if(T1.ptrTM->getToyMapType() != ToyPotType::HO){
-				printf("fitting HO to T1\n"); 
+				//printf("fitting HO to T1\n"); 
 				T1n = fitTorus(T1.J,1,ToyPotType::HO);
 			}
 		}
@@ -1184,7 +1184,7 @@ namespace actions {
 		while (As.size() < 4 && nfail < kmax) {
 			double kount = 0, distsq;
 			for (int k = 0; k < kmax; k++) {
-				int ntry = math::nonlinearMultiFit(LF, params, tolerance, maxNumIter, result, &distsq);
+				math::nonlinearMultiFit(LF, params, tolerance, maxNumIter, result, &distsq);
 				if (sqrt(distsq) < 2 * tol) {
 					A1 = Angles(math::wrapAngle(result[0]), math::wrapAngle(result[1]), 0.0);
 					P1 = from_toy(A1);
@@ -1483,12 +1483,8 @@ namespace actions {
 			double omegaR = J1 * (1 + e) * ((1 - fac) / pow_2(Rmax)
 				+ fac / pow_2(Rsh));
 			double X = 2 / M_PI * Rsh * J.Jz / (J.Jz + fabs(J.Jphi));
-			coord::HessCyl d2PhiRsh;
-			pot.eval(coord::PosCyl(Rsh,0,0),NULL,NULL,&d2PhiRsh);
-			//For staeckel potential for Jz small/ small motion in v axis ensure that Jz is correct.
-			double omega1=omegaR;//d2PhiRsh.dz2>0?sqrt(d2PhiRsh.dz2*(pow_2(Delta)+pow_2(Rsh)))/Rs:omegaR;
-			double omegaz = 2 * J.Jz / pow_2(X) * fac + (1 - fac) * omega1;
-			HarmonicOscilator os(omegaR, omegaz);
+			double omegaz = 2 * J.Jz / pow_2(X) * fac + (1 - fac) * omegaR;
+			HarmonicOscillator os(omegaR, omegaz);
 			fitmapHarm fm(Nn, Nnr, J, os, pot, Rs, Rs, Delta);
 			//now choose Fourier coeffs
 			std::vector<double> params2(Nn + Nnr, 0.0);
@@ -1552,7 +1548,7 @@ namespace actions {
 		double tol = defaultTol * tighten;
 		double Hbar, Hdisp = 1e20, Htarget = tol * freqScale * Jscale;
 		bool converged = false;
-		int Loop = 0, MaxLoop = 12, maxNumIter = 20;
+		int Loop = 0, MaxLoop = 7, maxNumIter = 20;
 		bool stuck = false;
 		std::vector<double> rep;
 		rep.push_back(HdispTM);
@@ -1565,7 +1561,7 @@ namespace actions {
 			if (std::isnan(Hdisp)) exit(0);
 			try {
 				NANbar = 0;
-				int numIter = math::nonlinearMultiFit(TF, &params[0], tolerance, maxNumIter, &params[0], &Hdisp);
+				math::nonlinearMultiFit(TF, &params[0], tolerance, maxNumIter, &params[0], &Hdisp);
 				Hdisp = sqrt(Hdisp);
 				rep.push_back(Hdisp);
 				converged = (Hdisp < tol * freqScale * Jscale);
@@ -1604,7 +1600,7 @@ namespace actions {
 			fprintf(logfile, "\nNANfracs: %f %f, resids:\n", NANfrac, NANbar);
 			for (int i = 0; i < rep.size(); i++) fprintf(logfile, "%7.2e ", rep[i]); printf("\n");
 		}
-		else{
+		else if(logfile){
 			fprintf(logfile,"\nConverged after %d iterations",Loop+1);
 		}
 		torusFitter TF(J, pot, freqScale, ptrTM, GFF);
@@ -1647,7 +1643,7 @@ namespace actions {
 			if (std::isnan(Hdisp)) exit(0);
 			try {
 				NANbar = 0;
-				int numIter = math::nonlinearMultiFit(TF, &params[0], tolerance, maxNumIter, &params[0], &Hdisp);
+				math::nonlinearMultiFit(TF, &params[0], tolerance, maxNumIter, &params[0], &Hdisp);
 				Hdisp = sqrt(Hdisp);
 				rep.push_back(Hdisp);
 				converged = (Hdisp < tol * freqScale * Jscale);
@@ -1725,7 +1721,7 @@ namespace actions {
 		GenFncFit GFF(indices, timesr, timesz, J);
 		torusFitter TF(J, pot, freqScale, ptrTM, GFF);
 		try {
-			int numIter = math::nonlinearMultiFit(TF, &params[0], tolerance, maxNumIter, &params[0], &Hdisp);
+			math::nonlinearMultiFit(TF, &params[0], tolerance, maxNumIter, &params[0], &Hdisp);
 			Hdisp = sqrt(Hdisp);
 			rep.push_back(Hdisp);
 		}
@@ -1816,7 +1812,7 @@ namespace actions {
 		std::vector<double> dJt_old;
 		ActionAngles aaT = T.ptrTM->pq2aa(P0);
 		Angles tT(aaT);	Actions JT(aaT);
-		printf("thetaT: %f %f %f\n",tT.thetar,tT.thetaz,tT.thetaphi);
+		//printf("thetaT: %f %f %f\n",tT.thetar,tT.thetaz,tT.thetaphi);
 		double diff = 1e20;
 		int kount = 0;
 		while (kount < 10) {
@@ -1839,7 +1835,7 @@ namespace actions {
 			T=T1;
 			dJt_old = dJt;
 			J.Jr += dJt[0]; J.Jz += dJt[1];
-			printf("kount:%d (%f,%f) %f\n", kount, J.Jr, J.Jz, diff);
+			//printf("kount:%d (%f,%f) %f\n", kount, J.Jr, J.Jz, diff);
 			if (diff < tol && kount>0) {
 				trueA = T.GF.trueA(tT);	break;
 			}

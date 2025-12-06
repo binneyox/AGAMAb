@@ -129,12 +129,10 @@ namespace actions {
 		std::pair<int, int> maxIs(maxIndices());
 		double strngth = 0;
 		for (int kz = -maxIs.second; kz <= maxIs.second; kz++) {
-			int N = 0;
 			for (int kr = kz > 0 ? 1 : 0; kr <= maxIs.first; kr++) {
 				GenFncIndex ind(kr, kz, 0);
 				double val(giveValue(ind));
 				if (std::isnan(val)) continue;
-				N = kr;
 				strngth += val * val;
 			}
 		}
@@ -142,16 +140,16 @@ namespace actions {
 	}
 
 	void GenFnc::write(FILE* ofile) const {
-		fprintf(ofile, "%zd\n", indices.size()/*, fracs.size()*/);
+		fprintf(ofile, "%zd\n", indices.size());
 		for (int i = 0; i < indices.size(); i++)
 			fprintf(ofile, "%d %d %d %g %g %g %g\n",
 				indices[i].mr, indices[i].mz, indices[i].mphi,
 				values[i], derivs[i].Jr, derivs[i].Jz, derivs[i].Jphi);
 	}
 	void GenFnc::read(FILE* ifile) {
-		int nt, nf;
-		fscanf_s(ifile, "%d", &nt/*, &nf*/);
-		indices.resize(nt); values.resize(nt); derivs.resize(nt/* + 2 * nf*/);
+		int nt;
+		fscanf_s(ifile, "%d", &nt);
+		indices.resize(nt); values.resize(nt); derivs.resize(nt);
 		for (int i = 0; i < indices.size(); i++)
 			fscanf_s(ifile, "%d %d %d %lg %lg %lg %lg\n",
 				&indices[i].mr, &indices[i].mz, &indices[i].mphi,
@@ -195,8 +193,7 @@ namespace actions {
 		double thetaT[3], Theta[3] = { theta.thetar, theta.thetaz, theta.thetaphi };
 		AngleFinder AF(this, theta);
 		const int maxIter = 15;
-		int numIter = math::findRootNdimDeriv(AF, Theta, 1e-6, maxIter, thetaT);
-		//if(numIter>=maxIter) printf("GenFnc toyA: max iterations in findRootNdimDeriv\n");
+		math::findRootNdimDeriv(AF, Theta, 1e-6, maxIter, thetaT);
 		return Angles(math::wrapAngle(thetaT[0]),
 			math::wrapAngle(thetaT[1]), math::wrapAngle(thetaT[2]));
 	}
@@ -210,11 +207,13 @@ namespace actions {
 	//Derivs of actions wrt thetaT
 	DerivAng<coord::Cyl> GenFnc::dJdt(const Angles& thetaT) const {
 		DerivAng<coord::Cyl> D;
-		for (unsigned int i = 0; i < indices.size(); i++) {
-			D.dbythetar.R = 0; D.dbythetaz.R = 0; D.dbythetaphi.R = 0;
-			D.dbythetar.z = 0; D.dbythetaz.z = 0; D.dbythetaphi.z = 0;
-			D.dbythetar.phi = 0; D.dbythetaz.phi = 0; D.dbythetaphi.phi = 0;
-		}
+		D.dbythetar.R = 0; D.dbythetaz.R = 0; D.dbythetaphi.R = 0;
+		D.dbythetar.z = 0; D.dbythetaz.z = 0; D.dbythetaphi.z = 0;
+		D.dbythetar.phi = 0; D.dbythetaz.phi = 0; D.dbythetaphi.phi = 0;
+		D.dbythetar.pR = 0; D.dbythetaz.pR = 0; D.dbythetaphi.pR = 0;
+		D.dbythetar.pz = 0; D.dbythetaz.pz = 0; D.dbythetaphi.pz = 0;
+		D.dbythetar.pphi = 0; D.dbythetaz.pphi = 0; D.dbythetaphi.pphi = 0;
+		
 		for (unsigned int i = 0; i < indices.size(); i++) {
 			double sinT = values[i] * sin(indices[i].mr * thetaT.thetar
 				+ indices[i].mz * thetaT.thetaz
@@ -277,7 +276,8 @@ namespace actions {
 	GenFnc interpGenFnc(const double x, const GenFnc& GF1, const GenFnc& GF2) {
 		if (x == 1) return GenFnc(GF1);
 		if (x == 0) return GenFnc(GF2);
-		const double eps = .05, xp = 1 - x;
+		//const double eps = .05, 
+		const double xp = 1 - x;
 		GenFnc G2(GF2);
 		GenFncIndices indices = GF1.indices;
 		std::vector<double> values = GF1.values;
@@ -384,7 +384,6 @@ namespace actions {
 	{   /// NOTE: here we specialize for the case of axisymmetric systems!
 		assert(params.size() == numParams());
 		std::map< std::pair<int, int>, double > indPairs;
-		int numaddTerm = 0/*, numaddFrac = 0*/;
 		GenFncIndices newIndices(indices);
 
 		// 1. Store amplitudes & determine the extent of existing grid in (mr,mz)
@@ -433,7 +432,6 @@ namespace actions {
 					)
 				{   // add a term if any of its neighbours are large enough
 					newIndices.push_back(GenFncIndex(ir, iz, 0));
-					numaddTerm++;
 				}
 			}
 		}

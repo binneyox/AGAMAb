@@ -4,11 +4,11 @@
 #include "potential_factory.h"
 #include "actions_base.h"
 namespace actions {
-	class EXP HarmonicOscilator {
+	class EXP HarmonicOscillator {
 
 	public:
 		double omegaR, omegaz;
-		HarmonicOscilator(double _omegaR = 1, double _omegaz = 1) : omegaR(fabs(_omegaR)), omegaz(fabs(_omegaz)) {};
+		HarmonicOscillator(double _omegaR = 1, double _omegaz = 1) : omegaR(fabs(_omegaR)), omegaz(fabs(_omegaz)) {};
 		double H(coord::PosMomCyl& rp) const;
 		double H(Actions J) const {
 			return ((2 * J.Jr + fabs(J.Jphi)) * omegaR + J.Jz*omegaz);
@@ -32,22 +32,22 @@ namespace actions {
 			coord::PosMomCar& drdomegar, coord::PosMomCar& drdomegaz) const;
 		coord::PosMomCar aa2pq(const ActionAngles& aa,
 			coord::PosMomCar& drdomegar, coord::PosMomCar& drdomegaz) const;
-		HarmonicOscilator& operator *= (const double a) {
+		HarmonicOscillator& operator *= (const double a) {
 			omegaR *= a; omegaz *= a;
 			return *this;
 		}
-		HarmonicOscilator& operator += (const HarmonicOscilator& os) {
+		HarmonicOscillator& operator += (const HarmonicOscillator& os) {
 			omegaR += os.omegaR; omegaz += os.omegaz;
 			return *this;
 		}
-		const HarmonicOscilator operator * (const double a) const {
-			HarmonicOscilator I2(omegaR * a, omegaz * a);
+		const HarmonicOscillator operator * (const double a) const {
+			HarmonicOscillator I2(omegaR * a, omegaz * a);
 			return I2;
 		}
-		const HarmonicOscilator operator + (const HarmonicOscilator ho) const {
-			HarmonicOscilator ho2(omegaR + ho.omegaR, ho.omegaz + omegaz);
+		const HarmonicOscillator operator + (const HarmonicOscillator ho) const {
+			HarmonicOscillator ho2(omegaR + ho.omegaR, ho.omegaz + omegaz);
 			return ho2;
 		}
 	};
-	EXP HarmonicOscilator interpHarmonicOscilator(const double, const HarmonicOscilator&, const HarmonicOscilator&);
+	EXP HarmonicOscillator interpHarmonicOscillator(const double, const HarmonicOscillator&, const HarmonicOscillator&);
 }

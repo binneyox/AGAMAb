@@ -134,7 +134,7 @@ namespace actions{
             double r1 = t*sc.x0;//math::unscale(sc, t);
             if (drdrn) {
                 double drndr;
-                double rn2=r2rn(r1, values, sc, &drndr);
+                r2rn(r1, values, sc, &drndr);
                 *drdrn = 1 / drndr;
             }
             return r1;
@@ -664,8 +664,8 @@ namespace actions{
 				return PtrToyMap(new ToyMapIso(interpIsochrone(x, Is0, Is1),interpPTIso(x,PTIs0,PTIs1)));
 			}
 			else if(PtrTM0->getToyMapType()==ToyPotType::HO){
-				HarmonicOscilator HOs0(val1,val2);
-				HarmonicOscilator HOs1(valn1,valn2);
+				HarmonicOscillator HOs0(val1,val2);
+				HarmonicOscillator HOs1(valn1,valn2);
 				PtrPointTransform PtrPT0=interpPointTrans(x,PtrTM0->getPointTrans(),PtrTM1->getPointTrans());
 				PtrPointTransform PtrPT1=PtrTM1->getPointTrans();
 				double par0[3];
@@ -680,7 +680,7 @@ namespace actions{
 				PtrPT1->getParams(par1,&pr1[0],&p1[0]);
 				math::ScalingInfTh sc1(par1[1]), scz1(par1[2]);
 				PTHarm PTH1(par1[0],sc1,scz1,p1,pr1);
-				return PtrToyMap(new ToyMapHarm(interpHarmonicOscilator(x, HOs0, HOs1),interpPTHarm(x,PTH0,PTH1)));
+				return PtrToyMap(new ToyMapHarm(interpHarmonicOscillator(x, HOs0, HOs1),interpPTHarm(x,PTH0,PTH1)));
 			}
 		}
 		printf("Error:cannot interpolate between a Harmonic oscillator and Isochrone Toy Map.\n");
@@ -702,6 +702,7 @@ namespace actions{
                 + dRzdrt(2, 2) * drdJs.pr + dRzdrt(2, 3) * drdJs.ptheta;
             dRzdPpot[0].pz = dRzdrt(3, 0) * drdJs.r + dRzdrt(3, 1) * drdJs.theta
                 + dRzdrt(3, 2) * drdJs.pr + dRzdrt(3, 3) * drdJs.ptheta;
+			dRzdPpot[0].phi= dRzdPpot[0].pphi=0;
             dRzdPpot[1].R = dRzdrt(0, 0) * drdb.r + dRzdrt(0, 1) * drdb.theta
                 + dRzdrt(0, 2) * drdb.pr + dRzdrt(0, 3) * drdb.ptheta;
             dRzdPpot[1].z = dRzdrt(1, 0) * drdb.r + dRzdrt(1, 1) * drdb.theta
@@ -710,6 +711,7 @@ namespace actions{
                 + dRzdrt(2, 2) * drdb.pr + dRzdrt(2, 3) * drdb.ptheta;
             dRzdPpot[1].pz = dRzdrt(3, 0) * drdb.r + dRzdrt(3, 1) * drdb.theta
                 + dRzdrt(3, 2) * drdb.pr + dRzdrt(3, 3) * drdb.ptheta;
+			dRzdPpot[1].phi= dRzdPpot[1].pphi=0;
         }
 		return Rz;
 	}
