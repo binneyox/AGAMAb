@@ -157,7 +157,6 @@ def writeVelocityDistributions(filename, model):
     gridv = numpy.linspace(-v_max, v_max, 201)
     A=numpy.zeros((len(gridv),4))
     for i in range(len(gridv)):
-        print(i,gridv[i],len(amplvR))
         A[i,0]=gridv[i]*intUnits.to_kms
         A[i,1]=interp.interpolate(gridv[i],amplvR)/ intUnits.to_kms
         A[i,2]=interp.interpolate(gridv[i],amplvz)/ intUnits.to_kms
