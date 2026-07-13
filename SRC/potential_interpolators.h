@@ -29,6 +29,11 @@
 #include "potential_utils.h"
 #include "actions_base.h"
 #include "smart.h"
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
+#define DELTAMIN 1e-4 //smallst permitted focal distance FD = DELTAMIN * Rc
 
 namespace potential{
 
@@ -113,28 +118,21 @@ EXP double estimateFocalDistanceShellOrbit(
 					   double* R=0, double* Jz=NULL, std::vector<coord::PosVelCyl>* shell=NULL);
 
 /* To construct a ShellInterpolator we integrate shell orbits on grid
- * in E,Xi=Jphi/Jc(E) (energy and inclination)
+ * in E, Xi = Jphi/Jc(E) (energy and inclination)
  * For each of D,Rsh we produce 2 types of LinearInterpolator2d:
  * For actionFinder x,y are scaledE and scaledXi
- * For torusGenerator x,y are L,Xi
+ * For torusGenerator x,y are L, Xi
  * Note: Xi has different meaning in the 2 cases:
-    for actionFinder Xi=Jphi/Lc(E)
-    for TorusGenerator Xi=Jphi/(Jz+Jphi)
+    for actionFinder Xi = Jphi/Lc(E)
+    for TorusGenerator Xi = Jphi/(Jz+Jphi)
 */
-
 class EXP ShellInterpolator{
 	private:
 		math::LinearInterpolator2d interpDE, interpRE;
 		math::LinearInterpolator2d interpDL, interpRL;
 	public:
 		ShellInterpolator(){}
-		ShellInterpolator(const BasePotential&);
-		ShellInterpolator(const math::LinearInterpolator2d& _intDE,
-					   const math::LinearInterpolator2d& _intRE,
-					   const math::LinearInterpolator2d& _intDL,
-					   const math::LinearInterpolator2d& _intRL):
-		    interpDE(_intDE), interpRE(_intRE),  interpDL(_intDL), interpRL(_intRL) {
-		}
+		ShellInterpolator(const BasePotential&,const std::string logfname = "");
 		
 		void getRshDelta(const double L,const double Xip,
 				 double& Rsh, double& Delta) const {
@@ -189,22 +187,19 @@ class EXP ShellInterpolator{
 /* The main job of PolarInterpolator is to hold the curve Jz(Jf) along
  * which the box/loop transition lies. In adition it holds the values
  * of Delta(E) that cause the I3 centrifugal barrier to vanish on this
- * curve and te associaed I3(E), where I3 is computed from the velocity
+ * curve and the associated I3(E), where I3 is computed from the velocity
  * of the transition orbit at (Rsh,0) 
 */
 class EXP  PolarInterpolator{
 	private:
-		math::LinearInterpolator interpI3, interpFD, interpUmin;
+		math::LinearInterpolator interpI3, interpFD, interpUmin, interpJzcrit;
 		std::vector<double> coeffsJz;
 		math::ScalingSemiInf Sc;
 	public:
 		PolarInterpolator(){}
-		PolarInterpolator(const BasePotential&, const PtrShellInterpolator);
-/*		PolarInterpolator(const std::vector<double>& gridEscaled, const std::vector<double>& gridI3,
-				  const std::vector<double>& gridFD, const std::vector<double>& gridJfScaled,
-				  const std::vector<double>& gridJz) :
-		    interpI3(gridEscaled,gridI3), interpFD(gridEscaled,gridFD),
-		    coeffsJz(math::fitPoly(15,gridJfScaled,gridJz)) {}*/
+		PolarInterpolator(const BasePotential&, const PtrShellInterpolator,
+				const std::string logfname="");
+
 		void getFDI3critUmin(const double E,const double invPhi0,
 			       double& Delta, double& I3, double& Umin) const{
 			double scaledE = math::clip(scaleE(E, invPhi0),
@@ -215,7 +210,7 @@ class EXP  PolarInterpolator{
 		}			
 		double getI3crit(const double E,const double invPhi0) const{
 			const double scaledE = math::clip(scaleE(E, invPhi0),
-				interpI3.xmin(), interpI3.xmax());
+				interpFD.xmin(), interpFD.xmax());
 			return interpI3.value(scaledE);
 		}
 		double getFDcrit(const double E,const double invPhi0) const{
@@ -225,9 +220,14 @@ class EXP  PolarInterpolator{
 		}
 		double getUmin(const double E,const double invPhi0) const{
 			const double scaledE = math::clip(scaleE(E, invPhi0),
-				interpUmin.xmin(), interpUmin.xmax());
+				interpFD.xmin(), interpFD.xmax());
 			return interpUmin.value(scaledE);
 		}
+		double getJz(const double E,const double invPhi0) const{
+			const double scaledE = math::clip(scaleE(E, invPhi0),
+				interpFD.xmin(), interpFD.xmax());
+			return interpJzcrit.value(scaledE);
+		}			
 		double getJz(const double Jf) const{
 			return math::evalPoly(coeffsJz, scale(Sc,Jf));
 		}

@@ -18,6 +18,9 @@ public:
     static const char* myName() { static const char* text = "Plummer"; return text; }
     virtual double enclosedMass(const double radius) const;
     virtual double totalMass() const { return mass; }
+    virtual double getJzcrit(const double Jf) const{
+	    return 0;
+    }
 private:
     const double mass;         ///< total mass  (M)
     const double scaleRadius;  ///< scale radius of the Plummer model  (b)
@@ -49,10 +52,14 @@ public:
     double density(double r) const;
     double Phi(double r) const;
     double dPhidr(double r) const;
+    double d2Phidr2(double r) const;
     double Vc2(double r) const{
 	    return r*dPhidr(r);
     }
     double Mass(double r) const;
+    virtual double getJzcrit(const double Jf) const{
+	    return 0;
+    }
 private:
     const double mass;         ///< total mass  (M)
     const double scaleRadius;  ///< scale radius of the Isochrone model  (b)
@@ -86,6 +93,10 @@ class EXP Hernquist: public BasePotentialSphericallySymmetric{
 		virtual double densitySph(const coord::PosSph &pos) const {
 			return density(pos.r);
 		}
+		virtual double getJzcrit(const double Jf) const{
+			return 0;
+		}
+
 };
 /** Spherical Navarro-Frenk-White potential:
     \f$  \Phi(r) = - M \ln{1 + (r/r_s)} / r  \f$  (note that total mass is infinite and not M). */
@@ -101,6 +112,9 @@ class EXP NFW: public BasePotentialSphericallySymmetric{
 		const double scaleRadius;  ///< scale radius of the NFW model  (r_s)
 		virtual void evalDeriv(double r,
 				       double* potential, double* deriv, double* deriv2) const;
+		virtual double getJzcrit(const double Jf) const{
+			return 0;
+		}
 };
 
 /* Class for a spherical Phi(r)=r^a
@@ -116,6 +130,9 @@ class EXP purePower: public BasePotentialSphericallySymmetric{
 		const double index;         ///< powe-law index
 		virtual void evalDeriv(double r,
 				       double* potential, double* deriv, double* deriv2) const;
+		virtual double getJzcrit(const double Jf) const{
+			return 0;
+		}
 };
 
 /** Axisymmetric Miyamoto-Nagai potential:
@@ -195,7 +212,19 @@ class EXP HenonHeiles: public BasePotentialCyl{
 		virtual void evalCyl(const coord::PosCyl &pos,
 				     double* potential, coord::GradCyl* deriv, coord::HessCyl* deriv2) const;
 };
-
+class EXP Toda : public  BasePotentialCyl {
+	public:
+		Toda():twort(2*sqrt(3)){}
+		virtual coord::SymmetryType symmetry() const {return coord::ST_ZROTATION;}
+		virtual const char* name() const { return myName(); }
+		static const char* myName() { static const char* text = "Toda"; return text; }
+		virtual double totalMass() const { return INFINITY; }
+		double I3(const coord::PosVelCyl Rv);
+	private:
+		const double twort;
+		virtual void evalCyl(const coord::PosCyl &pos,
+				     double* potential, coord::GradCyl* deriv, coord::HessCyl* deriv2) const;
+};
 /** Potential from Binney (1982) illustrating irregular orbits
  **/
 class EXP logRe: public BasePotentialCyl{
@@ -234,4 +263,5 @@ class EXP Sormani : public BasePotentialCyl {
 //		A=3*exp(2)/20*pow_2(V0/Vc)*pow_3(rq/Rb)*0.4;
 //		K=A*pos_2(Vc)*pow_3(Rb);
 };
+		
 }//namespace

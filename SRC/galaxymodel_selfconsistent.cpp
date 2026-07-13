@@ -105,7 +105,7 @@ EXP void doIteration(SelfConsistentModel& model)
 
 EXP void updateTotalPotential(SelfConsistentModel& model)
 {
-    std::cout << "Updating potential..."<<std::flush;
+//    std::cout << "Updating potential..."<<std::flush;
 
     // temporary array of density and potential objects from components
     std::vector<PtrDensity> compDensSph;
@@ -159,15 +159,19 @@ EXP void updateTotalPotential(SelfConsistentModel& model)
     // now check if the total potential is elementary or composite
     if(compPot.size()==0)
 	    throw std::runtime_error("No potential is present in SelfConsistentModel");
-    /* if(compPot.size()==1){
-	    potential::BasePotential* ptl = new potential::Potential(&compPot[0]);
-	    math::CubicSpline spl(actions::mapJcrit(*ptl));
-	    ptl->setJzcrit(spl);
-	    model.totalPotential = ptl;
-    } else */ {
+    if(compPot.size()==1){
+	    model.totalPotential = potential::wrapPotential(compPot[0]);
+//	    potential::BasePotential* ptl = new potential::Potential(&compPot[0]);
+//	    math::CubicSpline spl(actions::mapJcrit(*ptl));
+//	    ptl->setJzcrit(spl);
+//	    model.totalPotential = ptl;
+    } else {
 	    potential::PtrPotential ptl(new potential::CompositeCyl(compPot));
-	    potential::PtrShellInterpolator PtrShellI(new potential::ShellInterpolator(*ptl));
-	    potential::PtrPolarInterpolator PtrPolarI(new potential::PolarInterpolator(*ptl, PtrShellI));
+	    potential::PtrShellInterpolator PtrShellI(new potential::ShellInterpolator(*ptl,"ShInt.log"));
+	    potential::PtrPolarInterpolator PtrPolarI(new potential::PolarInterpolator(*ptl, PtrShellI,"ShInt.log"));
+
+//	    potential::PtrShellInterpolator PtrShellI(new potential::ShellInterpolator(*ptl));
+//	    potential::PtrPolarInterpolator PtrPolarI(new potential::PolarInterpolator(*ptl, PtrShellI));
 /*	    potential::CompositeCyl ptl(potential::CompositeCyl(compPot));
 	    potential::PtrShellInterpolator PtrShellI(new potential::ShellInterpolator(ptl);
 	    potential::PtrPolarInterpolator PtrPolarI(new

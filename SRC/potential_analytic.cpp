@@ -60,7 +60,12 @@ double Isochrone::Phi(double r) const{
 }
 double Isochrone::dPhidr(double r) const{
 	double a=sqrt(pow_2(scaleRadius) + r*r);
-	return mass*r/(a*pow_2(scaleRadius + r));
+	return mass*r/(a*pow_2(scaleRadius + a));
+}
+double Isochrone::d2Phidr2(double r) const{
+	double a=sqrt(pow_2(scaleRadius) + r*r);
+	return mass/pow_3(a*(scaleRadius+a))*(pow_2(a)*(scaleRadius+a)
+					      -pow_2(r)*(scaleRadius+3*a));
 }
 double Isochrone::Mass(double r) const{
 	double a=sqrt(pow_2(scaleRadius)+r*r);
@@ -217,8 +222,9 @@ void Harmonic::evalCar(const coord::PosCar &pos,
 	}
 }
 
+//In H-H & Toda z plays the role of x and R that of y
 void HenonHeiles::evalCyl(const coord::PosCyl &pos,
-		       double* potential, coord::GradCyl* deriv, coord::HessCyl* deriv2) const
+			  double* potential, coord::GradCyl* deriv, coord::HessCyl* deriv2) const
 {
 	if(potential)
 		*potential = 0.5* (pow_2(pos.R) + pow_2(pos.z))
@@ -235,6 +241,29 @@ void HenonHeiles::evalCyl(const coord::PosCyl &pos,
 		deriv2->dRdz = 2*pos.z;
 		deriv2->dzdphi=deriv2->dRdphi=0;
 	}
+}
+void Toda::evalCyl(const coord::PosCyl &pos,
+			  double* potential, coord::GradCyl* deriv, coord::HessCyl* deriv2) const
+{
+	if(potential)
+		*potential = (exp(2*pos.R)*cosh(twort*pos.z)+ .5*exp(-4*pos.R))/12.-.125;
+	if(deriv) {
+		deriv->dR = (exp(2*pos.R)*cosh(twort*pos.z) - exp(-4*pos.R))/6.;
+		deriv->dz = exp(2*pos.R)*sinh(twort*pos.z)*twort/12.;
+	}
+	if(deriv2) {
+		deriv2->dR2 = (exp(2*pos.R)*cosh(twort*pos.z) + 2*exp(-4*pos.R))/3.;
+		deriv2->dz2 =  exp(2*pos.R)*cosh(twort*pos.z)*pow_2(twort)/12.;
+		deriv2->dphi2 = 0;
+		deriv2->dRdz = exp(2*pos.R)*sinh(twort*pos.z)*twort/6.;
+		deriv2->dzdphi=deriv2->dRdphi=0;
+	}
+}
+double Toda::I3(const coord::PosVelCyl Rv){
+	return 8*Rv.vz*(pow_2(Rv.vz)-3*pow_2(Rv.vR))
+			+(Rv.vz+.5*twort*Rv.vR)*exp(2*Rv.z-twort*Rv.R)
+			-2*Rv.vz*exp(-4*Rv.z)
+			+(Rv.vz-.5*twort*Rv.vR)*exp(2*Rv.z+twort*Rv.R);
 }
 
 void Sormani::evalCyl(const coord::PosCyl &pos,

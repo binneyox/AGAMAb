@@ -125,6 +125,7 @@ struct NewOxfordParam{
 /// Creates anisotropic flattened double-powe-law systems
 class EXP NewDoublePowerLaw: public BaseDistributionFunction{
 	const double epsilonJ;
+	const double coefJrIn, coefJzIn;
 	const df::DoublePowerLaw DF0;
 	double wt(const actions::Actions& J) const;
 	public:
@@ -186,8 +187,8 @@ class EXP PlummerDF : public BaseDistributionFunction{
 struct IsochroneParam{
 	double mass;
 	double scaleRadius;
-	double mu, nu;
-	IsochroneParam() : mass(1), scaleRadius(1), mu(0), nu(0) {}
+	double mu;
+	IsochroneParam() : mass(1), scaleRadius(1), mu(0) {}
 };
 class EXP IsochroneDF : public BaseDistributionFunction{
 	const IsochroneParam par;

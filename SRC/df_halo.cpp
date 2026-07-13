@@ -202,7 +202,8 @@ EXP double DoublePowerLaw::value(const actions::Actions &J, const double Jzc) co
 
 NewDoublePowerLaw::NewDoublePowerLaw(const DoublePowerLawParam& _params,
 				     const potential::BasePotential& _pot) :
-    epsilonJ(_params.epsilonJ), DF0(_params) {}
+    epsilonJ(_params.epsilonJ), coefJrIn(_params.coefJrIn), coefJzIn(_params.coefJzIn),
+    DF0(_params) {}
 double NewDoublePowerLaw::wt(const actions::Actions& J) const{
 	return 1/(1+pow_2(J.Jphi)/(epsilonJ*(epsilonJ+J.Jr+J.Jz)));
 }
@@ -211,9 +212,9 @@ double NewDoublePowerLaw::value(const actions::Actions& J, const double Jzc) con
 	actions::Actions J1;
 	double eps = .2*epsilonJ;
 	if(J.Jz < Jzc){
-		J1=actions::Actions(J.Jr+.5*(fabs(J.Jphi)-eps), J.Jz, eps);
+		J1=actions::Actions(J.Jr+.5*(fabs(J.Jphi)-eps), J.Jz, .5*coefJrIn*eps);
 	} else {
-		J1=actions::Actions(J.Jr, J.Jz+(fabs(J.Jphi)-eps), eps);
+		J1=actions::Actions(J.Jr, J.Jz+(fabs(J.Jphi)-eps), coefJzIn*eps);
 	}
 	double F0=DF0.value(J, Jzc), F1=DF0.value(J1, Jzc);
 	return w*F1 + (1-w)*F0;
@@ -349,7 +350,7 @@ EXP void IsochroneDF::write_params(std::ofstream& strm, const units::InternalUni
 	strm << "type\t = IsochroneDF\n";
 	strm << "mass\t = " << par.mass << "\n";
 	strm << "scaleRadius\t = " << par.scaleRadius << "\n";
-	strm << "mu\t = " << par.mu << " nu = " << par.nu << "\n";
+	strm << "mu\t = " << par.mu << "\n";
 }
 #ifdef HENON //DF as given in Henon's paper with obscure scaling
 EXP double IsochroneDF::value(const actions::Actions& J, const double Jzc) const{

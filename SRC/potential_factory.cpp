@@ -64,7 +64,7 @@ enum PotentialType {
     PT_SERSIC,       ///< Sersic profile:  `Sersic`
 
     // potentials with infinite extent that can't be used as source density for a potential expansion
-    PT_LOG,          ///< triaxial logaritmic potential:  `Logarithmic`
+    PT_LOG,          ///< triaxial logarithmic potential:  `Logarithmic`
     PT_HARMONIC,     ///< triaxial simple harmonic oscillator:  `Harmonic`
 
     // analytic potential models that can also be used as source density for a potential expansion
@@ -178,8 +178,8 @@ const char* getCoefFileExtension(PotentialType type)
 EXP PtrPotential wrapPotential(const PtrPotential& pot){
 	std::vector<PtrPotential> components;
 	components.push_back(pot);
-	PtrShellInterpolator PtrShellI(new ShellInterpolator(*pot));
-	PtrPolarInterpolator PtrPolarI(new PolarInterpolator(*pot, PtrShellI));
+	PtrShellInterpolator PtrShellI(new ShellInterpolator(*pot/*,"ShInt.log"*/));
+	PtrPolarInterpolator PtrPolarI(new PolarInterpolator(*pot, PtrShellI/*,"ShInt.log"*/));
 	return PtrPotential(new CompositeCyl (components, PtrShellI, PtrPolarI));
 }
 
@@ -767,13 +767,13 @@ PtrPotential readPotential(const std::string& fileName, const units::ExternalUni
             std::vector<PtrPotential> components;
             while(std::getline(strm, buffer).good() && !strm.eof()){
 		    components.push_back(readPotential(prefix+buffer, converter));
-		    printf("Pot cpt read\n");
+		    printf("Potential cpt read\n");
 	    }
 	    PtrPotential ptl(new CompositeCyl(components));
-	    PtrShellInterpolator PtrShellI(new ShellInterpolator(*ptl));
-	    PtrPolarInterpolator PtrPolarI(new PolarInterpolator(*ptl, PtrShellI));
+	    PtrShellInterpolator PtrShellI(new ShellInterpolator(*ptl/*,"ShInt.log"*/));
+	    PtrPolarInterpolator PtrPolarI(new PolarInterpolator(*ptl, PtrShellI/*,"ShInt.log"*/));
 	    return PtrPotential(new CompositeCyl (components, PtrShellI, PtrPolarI));
-        }
+	    }
     }
     throw std::runtime_error("readPotential: cannot find valid potential coefficients in file "+fileName);
 }
@@ -1093,6 +1093,7 @@ PtrPotential createAnalyticPotential(const AllParam& param)
 		printf("Non-spherical Isochrone is not supported\n");
 //            throw std::invalid_argument("Non-spherical Isochrone is not supported");
     case PT_NFW:
+	    printf("NFW potential type\n");
         if(param.axisRatioY==1 && param.axisRatioZ==1)
             return PtrPotential(new NFW(param.mass, param.scaleRadius));
         else
@@ -1106,6 +1107,7 @@ PtrPotential createAnalyticPotential(const AllParam& param)
     case PT_KING:
         return createKingPotential(param.mass, param.scaleRadius, param.W0, param.trunc); 
     default:
+	    printf("Unknown potential type");
         throw std::invalid_argument("Unknown potential type");
     }
 }
@@ -1251,7 +1253,8 @@ PtrPotential createPotential(
             componentsDens.push_back(PtrDensity(new DiskAnsatz(dparam)));
             break;
         }
-        case PT_SPHEROID: {
+	case PT_SPHEROID: {
+				  printf("creating spheroid Potential\n");
             componentsDens.push_back(PtrDensity(new SpheroidDensity(parseSpheroidParam(param))));
             break;
         }
@@ -1283,7 +1286,8 @@ PtrPotential createPotential(
             break;
         }
         default:  // the remaining alternative is an elementary potential, or an error
-            componentsPot.push_back(createAnalyticPotential(param));
+		componentsPot.push_back(createAnalyticPotential(param));
+		printf("creating analytic potential\n");
         }
     }
 
@@ -1300,12 +1304,18 @@ PtrPotential createPotential(
     }
 
     assert(componentsPot.size()>0);
-    /*if(componentsPot.size() == 1)
-        return componentsPot[0];
-    else*/ {
+    if(componentsPot.size() == 1){
+	    if(isSpherical( *componentsPot[0] )){
+		    printf("Pot is spherical\n"); return componentsPot[0];
+	    }
+	    PtrShellInterpolator PtrShellI(new ShellInterpolator(*componentsPot[0]/*,"ShInt.log"*/));
+	    PtrPolarInterpolator PtrPolarI(new PolarInterpolator(*componentsPot[0], PtrShellI/*,"ShInt.log"*/));
+	    return PtrPotential(new CompositeCyl (componentsPot, PtrShellI, PtrPolarI));
+	    //
+    } else {
 	    PtrPotential ptl(new CompositeCyl(componentsPot));
-	    PtrShellInterpolator PtrShellI(new ShellInterpolator(*ptl));
-	    PtrPolarInterpolator PtrPolarI(new PolarInterpolator(*ptl, PtrShellI));
+	    PtrShellInterpolator PtrShellI(new ShellInterpolator(*ptl/*,"ShInt.log"*/));
+	    PtrPolarInterpolator PtrPolarI(new PolarInterpolator(*ptl, PtrShellI/*,"ShInt.log"*/));
 	    return PtrPotential(new CompositeCyl (componentsPot, PtrShellI, PtrPolarI));
     }
 }

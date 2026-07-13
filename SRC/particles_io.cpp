@@ -150,13 +150,23 @@ template<> inline std::string formatCMPParticle<coord::PosVelCar>(
 	const ParticleArray<coord::PosVelCar>::ElemType& point, const units::ExternalUnits& conv)
 {
 	return
-			utils::jjbcmp(point.first.x  / conv.lengthUnit  ) + 
+			utils::jjbcmp(point.first.x) + 
+			utils::jjbcmp(point.first.y) + 
+			utils::jjbcmp(point.first.z) + 
+			utils::jjbcmp(point.first.vx) + 
+			utils::jjbcmp(point.first.vy) + 
+			utils::jjbcmp(point.first.vz) +
+			utils::jjbcmp(point.second);
+
+/*  return
+ 			utils::jjbcmp(point.first.x  / conv.lengthUnit  ) + 
 			utils::jjbcmp(point.first.y  / conv.lengthUnit  ) + 
 			utils::jjbcmp(point.first.z  / conv.lengthUnit  ) + 
 			utils::jjbcmp(point.first.vx / conv.velocityUnit) + 
 			utils::jjbcmp(point.first.vy / conv.velocityUnit) + 
 			utils::jjbcmp(point.first.vz / conv.velocityUnit);// + '\t' +
 //			utils::jjbcmp(point.second   / conv.massUnit    ) + '\n';
+*/
 }
 
 template<> inline std::string formatCMPParticle<ParticleAux>(

@@ -138,14 +138,14 @@ public:
     }
     virtual void getRshDelta(const double, const double, const double,
 			     double&, double&) const{
-	    printf("Error getRshDelta(E,Xi) not overloaded\n");
+	    printf("Error getRshDelta(E,Xi,invPhi0) not overloaded\n");
     }
     virtual double getRsh(const double, const double) const{
 	    printf("Error getRsh(L,Xi) not overloaded\n");
 	    return 0;
     }
     virtual double getRsh(const double, const double, const double) const{
-	    printf("Error getRsh(E,Xi) not overloaded\n");
+	    printf("Error getRsh(E,Xi,invPhi0) not overloaded\n");
 	    return 0;
     }
     virtual double getDelta(const double, const double) const{
@@ -153,31 +153,35 @@ public:
 	    return 0;
     }
     virtual double getDelta(const double, const double, const double) const{
-	    printf("Error getDelta(E,Xi) not overloaded\n");
+	    printf("Error getDelta(E,Xi,invPhi0) not overloaded\n");
 	    return 0;
     }
     virtual double getJzcrit(const double Jf) const{
-	    printf("Error getJzcrit not overloaded\n");
+	    printf("Error getJzcrit(Jfast) not overloaded\n");
+	    return 0;
+    }
+    virtual double getJzcrit(const double,const double) const{
+	    printf("Error getJzcrit(E,invPhi0) not overloaded\n");
 	    return 0;
     }
     virtual void getFDI3critUmin(const double, const double,
 				double&, double&, double&) const{
-	    printf("Error getFDI3crit not overloaded\n");
+	    printf("Error getFDI3crit(E,invPhi0) not overloaded\n");
     }
     virtual double getFDcrit(const double, const double) const{
-	    printf("Error getFDcrit not overloaded\n");
+	    printf("Error getFDcrit(E,invPhi0) not overloaded\n");
 	    return 0;
     }
     virtual double getI3crit(const double E, const double) const{
-	    printf("Error getI3crit not overloaded\n");
+	    printf("Error getI3crit(E,invPhi0) not overloaded\n");
 	    return 0;
     }
     virtual double getUmin(const double E, const double) const{
-	    printf("Error getUmin not overloaded\n");
+	    printf("Error getUmin(E,invPhi0) not overloaded\n");
 	    return 0;
     }
     std::pair<double,double> getXiChi(const double E,const double Xip, const double invPhi0) const{
-	    printf("Error getXiChi not overloaded\n");
+	    printf("Error getXiChi(E,Xip,invPhi0) not overloaded\n");
 	    return std::make_pair(0,0);
     }
 

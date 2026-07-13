@@ -1,6 +1,6 @@
 #include "df_ergodic.h"
 
-namespace{
+namespace {
 /* Helper class for evaluation of density and frictional drag
  */
 class rho_integrand: public math::IFunctionNoDeriv {
@@ -22,7 +22,7 @@ namespace df{
 //fraction of density contributed as  v<Vmax
 double ergodicDF::fraction(const double Phi,const double Vmax) const{
 	rho_integrand rhoI(this,Phi);
-	return 4*M_PI*math::integrate(rhoI,0,Vmax,1e-5);
+	return 4*M_PI*math::integrate(rhoI,0,Vmax,1e-8);
 }
 
 double HernquistDF::value(const double E) const{
@@ -38,7 +38,16 @@ double IsochroneDF_E::value(const double E) const{
 	double cE = -E*scaleRadius/mass;
 	double sqE = sqrt(cE), cEp = 1-cE;
 	double f = sqE/pow_4(2*cEp)*(27-(66-(320-(240-64*cE)*cE)*cE)*cE
-				   +3*(cE*(cE*16+28)-9)*asin(sqE)/sqrt(cE*cEp));
+				     +3*(cE*(cE*16+28)-9)*asin(sqE)/sqrt(cE*cEp));
+	return f/factor;
+}
+double IsochroneDF_Lc::value(const double E) const{
+	const double Lc=exp(LcE.value(E));//Lc in actual Phi
+	double E0=-.5*pow_2(mass/(.5*(Lc+sqrt(Lc*Lc+4*mass*scaleRadius))));//Corresponding E
+	double cE = -E0*scaleRadius/mass;
+	double sqE = sqrt(cE), cEp = 1-cE;
+	double f = sqE/pow_4(2*cEp)*(27-(66-(320-(240-64*cE)*cE)*cE)*cE
+				     +3*(cE*(cE*16+28)-9)*asin(sqE)/sqrt(cE*cEp));
 	return f/factor;
 }
 

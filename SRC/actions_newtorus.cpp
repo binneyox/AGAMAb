@@ -1286,9 +1286,9 @@ namespace actions {
 	    logfname(_logfname), tmax(250) {
 		FILE* logfile = NULL;
 		if(logfname.size()>0){
-		if (fopen_s(&logfile, logfname.c_str(), "w"))
-			printf("I can't open logfile %s\n", logfname.c_str());
-		fclose(logfile);}
+			if (fopen_s(&logfile, logfname.c_str(), "w"))
+				printf("I can't open logfile %s\n", logfname.c_str());
+			fclose(logfile);}
 		//We use mapHJr defined in actions_spherical to create
 		//2d splines relating E, Jr, L
 		math::QuinticSpline2d interpEJr;
@@ -1463,13 +1463,16 @@ namespace actions {
 			std::vector<double> pr(Nnr), p(Nn);
 			for (int i = 0; i < Nnr; i++) {
 				pr[i] = params3[i];
-				if (logfile) fprintf(logfile, "paramsr: %f\n", pr[i]);
+				if (logfile && i==0) fprintf(logfile, "paramsr: %f", pr[i]);
+				else if(logfile) fprintf(logfile," %f",pr[i]);
 			}
+			if(logfile) fprintf(logfile,"\n");
 			for (int i = 0; i < Nn; i++){
 				p[i] = params3[i + Nnr];
-				if (logfile) fprintf(logfile, "paramstheta: %f\n", p[i]);
+				if (logfile && i==0) fprintf(logfile, "paramstheta: %f", p[i]);
+				else if(logfile) fprintf(logfile," %f",p[i]);
 			}
-			if (logfile) fprintf(logfile, "Js, b: %f %f Delta Rs: %f %f\n",
+			if (logfile) fprintf(logfile, "\nJs, b: %f %f Delta Rs: %f %f\n",
 				Js_iso, b_iso, Delta, Rs);
 			math::ScalingInfTh sc(Rs);
 			PTIso PT(Delta,sc,p,pr);
@@ -1489,16 +1492,19 @@ namespace actions {
 			//now choose Fourier coeffs
 			std::vector<double> params2(Nn + Nnr, 0.0);
 			if(Nn+Nnr>0)math::nonlinearMultiFit(fm, &params2[0], tolerance, 20, &params2[0], &Hdisp);
-			if (logfile) fprintf(logfile, "HO freqs: %f %f\n", omegaR, omegaz);
 			std::vector<double> p(Nnr, 0), pzv(Nn, 0);
 			for (int i = 0;i < Nnr;i++) {
 				p[i] = params2[i];
-				if (logfile) fprintf(logfile, "paramsr: %f\n", p[i]);
+				if (logfile && i==0) fprintf(logfile, "paramsr: %f", p[i]);
+				else if(logfile) fprintf(logfile," %f",p[i]);
 			}
+			if(logfile) fprintf(logfile,"\n");
 			for (int i = 0;i < Nn;i++) {
 				pzv[i] = params2[i+Nnr];
-				if (logfile) fprintf(logfile, "paramsz: %f\n", pzv[i]);
+				if (logfile && i==0) fprintf(logfile, "paramsz: %f\n", pzv[i]);
+				else if(logfile) fprintf(logfile," %f",p[i]);
 			}
+			if (logfile) fprintf(logfile, "\nHO freqs: %f %f\n", omegaR, omegaz);
 			math::ScalingInfTh sc(Rs);
 			math::ScalingInfTh scz(Rs);
 			PTHarm PT(Delta,sc,scz,pzv,p);
@@ -1528,7 +1534,7 @@ namespace actions {
 		FILE* logfile = NULL;
 		if(logfname.size()>0){
 			fopen_s(&logfile, logfname.c_str(), "a");
-			fprintf(logfile, "\nActions (%f %f %f)\n", J.Jr, J.Jz, J.Jphi);
+			fprintf(logfile, "\nStarting on actions (%f %f %f)\n", J.Jr, J.Jz, J.Jphi);
 		}
 		int nrmax = 10, nzmax = 4;// nzmax must be even
 		GenFncIndices indices = makeGridIndices(nrmax, nzmax);
@@ -1594,14 +1600,14 @@ namespace actions {
 		//printf("With %s TM Hdisp from %e to %e after %d expansions\n",
 		//       TMtype.c_str(), rep[0], Hdisp,Loop);
 		if (!converged && logfile) {
-			fprintf(logfile, "\nfitTorus failed to converge: %7.3e vs %7.3e target. ",
+			fprintf(logfile, "fitTorus failed to converge: %7.3e vs %7.3e target. ",
 				  Hdisp, Htarget);
 			fprintf(logfile, "%zd terms", indices.size());
 			fprintf(logfile, "\nNANfracs: %f %f, resids:\n", NANfrac, NANbar);
 			for (int i = 0; i < rep.size(); i++) fprintf(logfile, "%7.2e ", rep[i]); printf("\n");
 		}
 		else if(logfile){
-			fprintf(logfile,"\nConverged after %d iterations",Loop+1);
+			fprintf(logfile,"fitTorus converged after %d iterations",Loop+1);
 		}
 		torusFitter TF(J, pot, freqScale, ptrTM, GFF);
 		Frequencies freqs;
@@ -1618,7 +1624,7 @@ namespace actions {
 		FILE* logfile = NULL;
 		if(logfname.size()>0){
 			fopen_s(&logfile, logfname.c_str(), "a");
-			fprintf(logfile, "\nActions (%f %f %f)\n", J.Jr, J.Jz, J.Jphi);
+			fprintf(logfile, "\nStarting on actions (%f %f %f)\n", J.Jr, J.Jz, J.Jphi);
 		}
 		int nrmax = 6, nzmax = 4;// nzmax must be even
 		GenFncIndices indices = makeGridIndices(nrmax, nzmax);
@@ -1673,7 +1679,7 @@ namespace actions {
 		GenFncFit GFF(indices, 2*timesr, 2*timesz, J);
 		printf("Hdisp %e after %d expansions\n", Hdisp, Loop);
 		if (!converged && logfile) {
-			fprintf(logfile, "\nfitTorus failed to converge: %7.3e vs %7.3e target. ",
+			fprintf(logfile, "fitTorus failed to converge: %7.3e vs %7.3e target. ",
 				  Hdisp, Htarget);
 			fprintf(logfile, "%zd terms", indices.size());
 			fprintf(logfile, "\nNANfracs: %f %f, resids:\n", NANfrac, NANbar);
@@ -1694,7 +1700,7 @@ namespace actions {
 		FILE* logfile = NULL;
 		if(logfname.size()>0){
 			fopen_s(&logfile, logfname.c_str(), "a");
-			fprintf(logfile, "\nActions (%f %f %f)\n", J.Jr, J.Jz, J.Jphi);
+			fprintf(logfile, "\nStarting on actions (%f %f %f)\n", J.Jr, J.Jz, J.Jphi);
 		}
 		int nrmax = 2, nzmax = 6;// nzmax must be even
 		GenFncIndices indices = makeGridIndices(nrmax, nzmax);

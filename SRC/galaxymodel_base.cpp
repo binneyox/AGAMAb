@@ -1345,6 +1345,14 @@ EXP particles::ParticleArrayCyl samplePosVel(
 	// transform from scaled vars (array of 6 numbers) to real pos/vel
 		points.add(fnc.unscaleVars(scaledvars), pointMass);
 	}
+	double KE=0, PE=0;
+	for(int i=0; i<points.size(); i++){
+		coord::PosVelCyl xv(points[i].first);
+		KE += pow_2(xv.vR)+pow_2(xv.vz)+pow_2(xv.vphi);
+		PE += model.potential.value(xv);
+	}
+	KE*=.5*pointMass; PE*=.5*pointMass;
+	printf("KE %g  PE %g Virial %g\n",KE,PE,2*KE+PE);
 	return points;
 }
 

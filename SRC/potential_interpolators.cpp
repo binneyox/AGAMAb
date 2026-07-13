@@ -12,9 +12,39 @@ static const double ACCURACY_INTERP2 = 1e-5;
 /// upper limit on the number of timesteps in ODE solver (should be enough to track half of the orbit)
 static const unsigned int MAX_NUM_STEPS_ODE = 2000;
 
+FILE* pfile = NULL;
+
 namespace potential{
 
 namespace{
+
+/** find the best-fit value of focal distance for a shell orbit.
+    \param[in] traj  contains the trajectory of this orbit in R-z plane,
+    \return  the parameter `delta` of a prolate spheroidal coordinate system which minimizes
+    the variation of `lambda` coordinate for this orbit
+    If the best-fit value is negative, it is replaced with zero.
+*/
+EXP double fitFocalDistanceShellOrbit(const std::vector<coord::PosVelCyl>& traj)
+{
+	if(traj.size()==0)
+		throw std::invalid_argument("Error in finding focal distance for a shell orbit: empty array");
+	math::Matrix<double> coefs(traj.size(), 2);
+	std::vector<double> rhs(traj.size());
+	std::vector<double> result;  // regression parameters:  lambda/(lambda-delta), lambda
+	for(unsigned int i=0; i<traj.size(); i++) {
+		coefs(i, 0) = -pow_2(traj[i].R);
+		coefs(i, 1) = 1.;
+		rhs[i] = pow_2(traj[i].z);
+	}
+	//If 1>result[0]>1 an ellipse has been fitted, while
+	//a hyperbola is signalled by result[0]<0 
+	math::linearMultiFit(coefs, rhs, NULL, result);
+//	if(1/result[0]>=1)
+//		printf("error in fitFocalDistanceShellOrbit %g %g %g\n",
+//		       result[0],result[1],traj[0].R);
+	return result[0]>1? sqrt( fmax( result[1] * (1 - 1/result[0]), 0) ) :
+			sqrt(fabs(result[1]));
+}
 
 // Class to find the largest FD that yields a centrifugal barrier even
 // with Lz=0. Rsh is the radius of the shell orbit and vR is vR is
@@ -37,7 +67,7 @@ class EXP FDfinder{
 		}
 		math::Matrix<double> derivs(double u,double Delta,double& d2p2du2,
 					    double* p2=NULL,double* p2prime=NULL);
-		double bestFD(double&, double&);
+		double bestFD(double&);
 };
 
 EXP math::Matrix<double> FDfinder::derivs(double u,double Delta, double& d2p2du2,
@@ -70,15 +100,15 @@ EXP math::Matrix<double> FDfinder::derivs(double u,double Delta, double& d2p2du2
 }
 
 //implements N-R search for umin and Delta s.t.  p_u^2=dp_u^2/du=0
-EXP double FDfinder::bestFD(double& Umin, double& d2p2du2){
+EXP double FDfinder::bestFD(double& Umin){
 	double u=asinh(.1*Rsh/Delta0);
-	double det, p2=1, p2prime=1, Delta=Delta0, fac=1;
+	double det, p2=1, p2prime=1, Delta=Delta0, fac=1, d2p2du2;
 	int i=0;
 	while(i<20 && u>0 && (fabs(p2)>1e-4 || fabs(p2prime)>1e-4)){
 		math::Matrix<double> M0(derivs(u,Delta,d2p2du2,&p2,&p2prime));
-		det=M0(0,0)*M0(1,1)-M0(1,0)*M0(0,1);
-		double dY0 = ( M0(1,1)*p2-M0(0,1)*p2prime)/det;
-		double dY1 = (-M0(1,0)*p2+M0(0,0)*p2prime)/det;
+		det = M0(0,0)*M0(1,1) - M0(1,0)*M0(0,1);
+		double dY0 = ( M0(1,1)*p2 - M0(0,1)*p2prime)/det;
+		double dY1 = (-M0(1,0)*p2 + M0(0,0)*p2prime)/det;
 		while(fabs(dY0)>.5*u){
 			dY0*=.5; dY1*=.5;
 		}
@@ -284,6 +314,8 @@ class OrbitIntegratorMeridionalPlane: public math::IOdeSystem {
 			dxdt[6] = -(hess.dR2 + 3*Lz2ovR4) * x[4] - hess.dRdz * signR * x[5];
 			dxdt[7] = - hess.dRdz * signR * x[4] - hess.dz2 * x[5];
 			dxdt[8] = pow_2(x[3]) + pow_2(x[2]);//dJz = vz*dvz + vR*dvR 
+			if(Lz2==0 && pfile) fprintf(pfile,"%10.7f %10.7f %10.7f %10.7f %10.7f %10.7f\n",
+			       x[0],x[1],x[2],x[3],grad.dR,grad.dz);
 		}
 
 		virtual unsigned int size() const { return 9; }  // two coordinates and two velocities
@@ -370,7 +402,8 @@ void findCrossingPointR(
 			timeCross  = 0;
 			Rcross     = R0;   // this would terminate the root-finder, but we have no better option..
 			dRcrossdR0 = NAN;
-			//printf("Failed to compute shell orbit for E=%g, Lz=%g, R=%g\n",E,Lz,R0);
+			if(R0>1e-8) printf("After %d steps failed to compute shell orbit for E=%g, Lz=%g, R=%g\n",
+			       numStepsODE,E,Lz,R0);
 			return;
 		} else {
 			numStepsODE++;
@@ -436,15 +469,29 @@ void testFDfinder(double E, double Rsh, double vR, double FD, const BasePotentia
 	printf("(%g %g) (%g %g)\n",M(1,0),Mp(1,0),M(1,1),Mp(1,1));
 }
 
+void isMonotone(std::vector<double> x){
+	for(int i=1; i<x.size(); i++){
+		if(x[i]<=x[i-1])
+			printf("isn't Monontone %g %g\n",x[i-1],x[i]);
+	}
+}
 /* We integrate shell orbits on grid in E,Xi=Jphi/Jc(E) (energy and inclination)
  * For each of D,Rsh we produce 2 types of LinearInterpolator2d:
- * For actionFinder x,y are scaledE and scaledXi
- * For torusGenerator x,y are L,Xi
+ * For actionFinder x,y are scaledE and scaledXi & Rsh/Rcirc is
+ * For torusGenerator x,y are L,Xi and Rsh is returned
  * Note: Xi has different meaning in the 2 cases:
     for actionFinder Xi=Jphi/Lc(E)
     for TorusGenerator Xi=Jphi/(Jz+Jphi)
 */
-EXP ShellInterpolator::ShellInterpolator(const BasePotential& pot){
+EXP ShellInterpolator::ShellInterpolator(const BasePotential& pot,
+					 const std::string logfname){
+	printf("Initialising the potential...");
+	FILE* logfile = NULL;
+	if(logfname.size()>0){
+		if (fopen_s(&logfile, logfname.c_str(), "w"))
+			printf("I can't open logfile %s\n", logfname.c_str());
+		else printf("logfile %s opened\n",logfname.c_str());
+	}
 	const double invPhi0 = 1/pot.value(coord::PosCyl(0,0,0));
 	std::vector<double> gridR = potential::createInterpolationGrid
 				    (pot, ACCURACY_INTERP2);
@@ -468,12 +515,16 @@ EXP ShellInterpolator::ShellInterpolator(const BasePotential& pot){
 	math::Matrix<double> grid2dRE(sizeE,sizeXi);  // Rshell / Rcirc(E)
 	math::Matrix<double> grid2dL(sizeE,sizeXi);  // L = Jz+Jphi values
 	math::Matrix<double> grid2dDL(sizeE,sizeXi);  // focal distance
-	math::Matrix<double> grid2dRL(sizeE,sizeXi);  // Rshell / Rcirc(E)
+	math::Matrix<double> grid2dRL(sizeE,sizeXi);  // Rshell
 	std::string errorMessage;  // store the error text in case of an exception in the openmp block
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic)
 #endif
 	for(int iE = 0; iE < sizeE-1; iE++) {//avoid almost free orbits
+		int nth=0;
+#ifdef _OPENMP
+		nth = omp_get_thread_num();
+#endif
 		double E  = gridE[iE];
 		double Rc = R_circ(pot, E);
 		double Jz, Lc = gridL[iE];
@@ -485,8 +536,9 @@ EXP ShellInterpolator::ShellInterpolator(const BasePotential& pot){
 			try{
 				double Jphi = Lc * gridXi[iXi];
 				std::vector<coord::PosVelCyl> shell;
-				double Rsh, FD = estimateFocalDistanceShellOrbit
+				double Rsh, FD0 = estimateFocalDistanceShellOrbit
 					(pot, E, Jphi, &Rsh, &Jz, &shell);
+				double FD = fmax(DELTAMIN*Rc, FD0);
 				grid2dDE(iE, iXi) = FD;
 				grid2dRE(iE, iXi) = Rsh / Rc;
 				double L = Jphi + Jz;
@@ -506,7 +558,8 @@ EXP ShellInterpolator::ShellInterpolator(const BasePotential& pot){
 		L_vals[sizeXi - 1] = Lc;
 		Xi_vals[sizeXi - 1] = 1;
 	//Now interpolate values L, D, R at given E onto
-	//regular grid in Jz/L 
+	//regular grid in Jz/L
+		isMonotone(Xi_vals);
 		math::LinearInterpolator interpL(Xi_vals, L_vals);
 		math::LinearInterpolator interpD(Xi_vals, D_vals);
 		math::LinearInterpolator interpR(Xi_vals, R_vals);
@@ -524,8 +577,12 @@ EXP ShellInterpolator::ShellInterpolator(const BasePotential& pot){
 		grid2dDL(sizeE-1, iXi) = grid2dDL(sizeE-2,iXi);
 		grid2dRL(sizeE-1, iXi) = R_circ(pot, gridE[sizeE-1]);// Rshell = Rcirc
 	}
-//	for(int i=0; i<sizeE; i+=2) printf("%g %g %g %g\n",
-//					   gridE[i],grid2dDE(i,0),grid2dRE(i,0),gridR[i]);
+	if(logfile){
+		fprintf(logfile,"%d\n",sizeE);
+		fprintf(logfile,"  E  Delta(E,0) Rsh(E,0) R(E,0)\n");      
+		for(int i=0; i<sizeE; i+=2) fprintf(logfile,"%g %g %g %g\n",
+			gridE[i],grid2dDE(i,0),grid2dRE(i,0),gridR[i]);
+	}
 	//grid2dD contains D on regular grid in Xi but irregular
 	//values of L that are stored in grid2dL
 	for (int iXi = 0; iXi < sizeXi; iXi++) {
@@ -538,6 +595,7 @@ EXP ShellInterpolator::ShellInterpolator(const BasePotential& pot){
 			R_vals[iE] = grid2dRL(iE, iXi);
 		}
 		//We now have D and R at series of L values
+		isMonotone(L_vals);
 		math::LinearInterpolator DL(L_vals, D_vals);
 		math::LinearInterpolator RL(L_vals, R_vals);
 		for (int iE = 0; iE < sizeE; iE++) {
@@ -553,18 +611,26 @@ EXP ShellInterpolator::ShellInterpolator(const BasePotential& pot){
 	interpRE = math::LinearInterpolator2d(gridEscaled, gridXiscaled, grid2dRE);
 	interpDL = math::LinearInterpolator2d(gridLscaled, gridXiscaled, grid2dDL);
 	interpRL = math::LinearInterpolator2d(gridLscaled, gridXiscaled, grid2dRL);
+	if(logfile) fclose(logfile);
 }
 
 /* The main job of PolarInterpolator is to hold the curve Jz(Jf) along
  * which the box/loop transition lies. In adition it holds the values
  * of Delta(E) that cause the I3 centrifugal barrier to vanish on this
- * curve and te associaed I3(E), where I3 is computed from the velocity
+ * curve and the associaed I3(E), where I3 is computed from the velocity
  * of the transition orbit at (Rsh,0) 
 */
 EXP PolarInterpolator::PolarInterpolator(const potential::BasePotential& pot,
-					 const PtrShellInterpolator PtrShellI) {
-			//spherical potential only has loop orbits by conservation of angular momentum.
-			// Also if potential infinite as centre also always loop orbits.
+					 const PtrShellInterpolator PtrShellI,
+					const std::string logfname) {
+	FILE* logfile = NULL;
+	if(logfname.size()>0){
+		if (fopen_s(&logfile, logfname.c_str(), "a"))
+			printf("I can't open logfile %s\n", logfname.c_str());
+		else printf("logfile %s re-opened\n",logfname.c_str());
+	}
+//spherical potential only has loop orbits by conservation of angular momentum.
+// Also if potential infinite as centre also always loop orbits.
 	double Phi0 = pot.value(coord::PosCar(0, 0, 0));//potential at centre
 	std::vector<double> gridR = potential::createInterpolationGrid
 				    (pot, ACCURACY_INTERP2);
@@ -594,22 +660,30 @@ EXP PolarInterpolator::PolarInterpolator(const potential::BasePotential& pot,
 		double E0, z0;
 		double b;//z=b(E-E0)+z0
 		int i = 0;
-		double Rsh, vR, Umin, d2pu2du2;
+		double Rsh, FD, vR, Umin, d2pu2du2;
 		while(i<sizeE) {
-			Rsh = PtrShellI->getRsh(gridE[i], 0, 1/Phi0) * R_circ(pot, gridE[i]);
-			double FD = PtrShellI->getDelta(gridE[i], 0, 1/Phi0);
+			PtrShellI->getRshDelta(gridE[i], 0, 1/Phi0, Rsh, FD);
+			double Rc = R_circ(pot, gridE[i]);
+			Rsh *= Rc;
+			//printf("%g %g %g\n",Rsh,FD/Rc,gridE[i]/Phi0);
 			if (gridE[i] / Phi0 > 0.2 && !interp) {
 				actions::Actions Jcrit = BoxLoopTrAct(pot, gridE[i], Rsh, vR);
-				FDfinder FDf(gridE[i], Rsh, vR, FD, pot);
-				//if(i==5) testFDfinder(gridE[i], Rsh, vR, FD, pot);
-				gridFD.push_back(FDf.bestFD(Umin, d2pu2du2));
-				gridUmin.push_back(Umin);
+				gridJr[i] = Jcrit.Jr; gridJz[i] = Jcrit.Jz;
+				if(FD > DELTAMIN*Rc){
+					FDfinder FDf(gridE[i], Rsh, vR, FD, pot);
+					//if(i==5) testFDfinder(gridE[i], Rsh, vR, FD, pot);
+					gridFD.push_back(FDf.bestFD(Umin));
+					gridUmin.push_back(Umin);
+					//printf("%g %g %g %g %g\n",Rc,Rsh,FD/Rc,gridFD.back(),gridUmin.back());
+				} else {
+					gridFD.push_back(FD);
+					gridUmin.push_back(0);
+				}
 				const coord::ProlSph coordsys(gridFD.back());
 				double vzsq = 2*(gridE[i] - pot.value(coord::PosCyl(Rsh,0,0))) - pow_2(vR); 
 				double vz = vzsq>0? sqrt(vzsq) : 0;
 				coord::PosVelCyl point(Rsh,0,0,vR,vz,0);
 				gridI3.push_back(actions::getI3(pot, point, coordsys));
-				gridJr[i] = Jcrit.Jr; gridJz[i] = Jcrit.Jz;
 				if ((i > N+1) && (1-gridE[i]/Phi0) > 1e-4) {
 					if (gridJz[i] < gridJz[i-1]) {
 						interp = true;
@@ -654,10 +728,19 @@ EXP PolarInterpolator::PolarInterpolator(const potential::BasePotential& pot,
 			}
 		}
 	}
-	interpI3 = math::LinearInterpolator(gridEscaled, gridI3);
-	interpFD = math::LinearInterpolator(gridEscaled, gridFD);
-	interpUmin=math::LinearInterpolator(gridEscaled, gridUmin);
+	if(logfile){
+		fprintf(logfile,"%d\n",sizeE);
+		fprintf(logfile," scaledE   I3   Delta Umin  Jfscaled  Jzcrit\n"); 
+		for(int i=0; i<sizeE; i++) fprintf(logfile,"%g %g %g %g %g %g\n",
+			gridEscaled[i],gridI3[i],gridFD[i],gridUmin[i],gridJfScaled[i],gridJz[i]);
+		fclose(logfile);
+	}
+	interpI3  =  math::LinearInterpolator(gridEscaled, gridI3);
+	interpFD  =  math::LinearInterpolator(gridEscaled, gridFD);
+	interpUmin = math::LinearInterpolator(gridEscaled, gridUmin);
+	interpJzcrit=math::LinearInterpolator(gridEscaled, gridJz);
 	coeffsJz = math::fitPoly(15, gridJfScaled, gridJz);
+	printf("done\n");
 }
 
 void findCrossingPointV(
@@ -739,6 +822,7 @@ EXP void FindClosedOrbitRZplane::evalDeriv(const double R0, double* val, double*
 		return;
 	}
 	double Rcross, dRcrossdR=NAN;
+	if(Jphi==0 && pfile) fprintf(pfile,"\n");
 	findCrossingPointR(poten, E, Jphi, R0, timeCross, traj, Rcross, dRcrossdR, Jz);
 	if(val)
 		*val = Rcross-R0;
@@ -761,7 +845,11 @@ EXP double estimateFocalDistanceShellOrbit(
 {
 	double Rmin, Rmax, FD;
 	findPlanarOrbitExtent(poten, E, Jphi, Rmin, Rmax);
-	double timeCross = 5*pow_2(Rmin)/Jphi, Jz;
+	//double timeCross = 5*pow_2(Rmin)/Jphi, Jz;
+	double Rbar=.5*(Rmin+Rmax), Jz;
+	double timeCross = 5*pow_2(Rbar)/(2*(E-poten.value(coord::PosCyl(Rbar,0,0))));
+	if(Jphi==0 && pfile) fprintf(pfile,"\n");
+	//if(Jphi<1e-4) printf("Rmin..%g %g %g %g\n",Rmin,Rmax,Jphi,timeCross);
 	std::vector<std::pair<coord::PosVelCyl,double> > traj;
 	FindClosedOrbitRZplane finder(poten, E, Jphi, Rmin, Rmax, timeCross, traj, Jz);
     // locate the radius of a shell orbit;  as a by-product, store the orbit in 'traj'
@@ -770,12 +858,12 @@ EXP double estimateFocalDistanceShellOrbit(
 		for(int i=0; i<traj.size(); i++)
 			shell->push_back(traj[i].first);
 	}
-
+#define OLD_METHOD 1
 #ifdef OLD_METHOD
-	if(traj.size() >= 2)
+	if(traj.size() >= 2){
 	// now find the best-fit value of delta for this orbit
-		FD = fitFocalDistanceShellOrbit(traj);
-	else {
+		FD = fitFocalDistanceShellOrbit(*shell);
+	} else {
 	// something went wrong; use a backup solution
 		if(!isFinite(Rshell))
 			Rshell = 0.5 * (Rmin+Rmax);
@@ -784,8 +872,8 @@ EXP double estimateFocalDistanceShellOrbit(
 			   " - assuming Rthin="+utils::toString(Rshell,16));
 	// if we don't have a proper orbit, make a short vertical step out of the z=0 plane
 	// and estimate the focal distance from the mixed derivative at this single point
-		FD = estimateFocalDistancePoints(poten, std::vector<coord::PosCyl>(1,
-			coord::PosCyl(Rshell, /* z=very small number */ Rshell*ACCURACY_RSHELL, 0)));
+	//	FD = estimateFocalDistancePoints(poten,
+	//	std::vector<coord::PosCyl>(1,coord::PosCyl(Rshell, /* z=very small number */ Rshell*ACCURACY_RSHELL, 0)));
 	}
 #else
 	double Phi;

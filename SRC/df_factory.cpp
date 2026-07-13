@@ -156,8 +156,7 @@ EXP IsochroneParam parseIsochroneParam(
 	par.mass        = kvmap.getDouble("mass"       ,par.mass)       * conv.massUnit;
 	par.scaleRadius = kvmap.getDouble("scaleRadius",par.scaleRadius)* conv.lengthUnit;
 	par.mu          = kvmap.getDouble("mu"         ,par.mu);
-	par.nu          = kvmap.getDouble("nu"         ,par.nu);
-	printf("loading Isochrone M %f b %f mu %f nu %f\n",par.mass,par.scaleRadius,par.mu,par.nu);
+	printf("loading Isochrone M %f b %f mu %f\n",par.mass,par.scaleRadius,par.mu);
 	return par;
 }
 

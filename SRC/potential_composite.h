@@ -56,7 +56,9 @@ class EXP CompositeCyl: public BasePotentialCyl{
 		static const char* myName() { static const char* text = "CompositePotential"; return text; }
 
 		unsigned int size() const { return components.size(); }
-		PtrPotential component(unsigned int index) const { return components.at(index); }
+		PtrPotential component(unsigned int index) const {
+			return components.at(index);
+		}
 		//Functions that extract data from ShellInterpolator
 		virtual void getRshDelta(const double L, const double Xip,
 					 double& Rsh, double& Delta) const{
@@ -96,6 +98,14 @@ class EXP CompositeCyl: public BasePotentialCyl{
 		virtual double getJzcrit(const double Jf) const{
 			if(PtrPolarI)
 				return PtrPolarI->getJz(Jf);
+			else{
+				printf("PtrPolar is NULL\n");
+				return 0;
+			}
+		}
+		virtual double getJzcrit(const double E,const double invPhi0) const{
+			if(PtrPolarI)
+				return PtrPolarI->getJz(E, invPhi0);
 			else{
 				printf("PtrPolar is NULL\n");
 				return 0;

@@ -741,7 +741,7 @@ EXP Actions ActionFinderAxisymFudge::actions(const coord::PosVelCyl& point) cons
     // get FD I3crit Umin of box/loop transition orbit
     double FDcrit,I3crit, Umin;
     pot->getFDI3critUmin(E, invPhi0, FDcrit, I3crit, Umin);
-    if(FDcrit<=0)FDcrit=1e-4*Rcirc;
+    if(FDcrit<=0)FDcrit = 1e-4*Rcirc;
     coord::ProlSph cs(FDcrit);
     double I3 = getI3(*pot, point, cs);
     double Rshell = pot->getRsh(E, fabs(Lz)/Lcirc, invPhi0);
