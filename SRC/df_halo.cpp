@@ -183,9 +183,11 @@ EXP double DoublePowerLaw::value(const actions::Actions &J, const double Jzc) co
 {
 	double L=J.Jz+fabs(J.Jphi);
     // linear combination of actions in the inner part of the model (for J<J0)
-	double hJ  = fmax(0, par.coefJrIn * J.Jr +par.coefJzIn * J.Jz +fabs(J.Jphi));
+	double hJ  = fmax(0, par.coefJrIn * J.Jr +par.coefJzIn * J.Jz +
+			  (3 - par.coefJrIn - par.coefJzIn) * fabs(J.Jphi));
     // linear combination of actions in the outer part of the model (for J>J0)
-	double gJ  = fmax(0, par.coefJrOut * J.Jr + par.coefJzOut * J.Jz + fabs(J.Jphi));
+	double gJ  = fmax(0, par.coefJrOut * J.Jr + par.coefJzOut * J.Jz +
+			  (3 - par.coefJrOut - par.coefJzOut) * fabs(J.Jphi));
 	double val = par.norm / pow_3(2*M_PI * par.J0) *
 		     math::pow(1 + math::pow(par.J0 / hJ, par.steepness),  par.slopeIn  / par.steepness) *
 		     math::pow(1 + math::pow(gJ / par.J0, par.steepness), -par.slopeOut / par.steepness);
@@ -202,9 +204,9 @@ EXP double DoublePowerLaw::value(const actions::Actions &J, const double Jzc) co
 
 NewDoublePowerLaw::NewDoublePowerLaw(const DoublePowerLawParam& _params,
 				     const potential::BasePotential& _pot) :
-    epsilonJ(_params.epsilonJ), coefJrIn(_params.coefJrIn), coefJzIn(_params.coefJzIn),
-    DF0(_params) {}
-double NewDoublePowerLaw::wt(const actions::Actions& J) const{
+    epsilonJ(_params.epsilonJ), coefJrIn(_params.coefJrIn), coefJzIn(_params.coefJzIn),	DF0(_params) {
+}
+	double NewDoublePowerLaw::wt(const actions::Actions& J) const{
 	return 1/(1+pow_2(J.Jphi)/(epsilonJ*(epsilonJ+J.Jr+J.Jz)));
 }
 double NewDoublePowerLaw::value(const actions::Actions& J, const double Jzc) const{

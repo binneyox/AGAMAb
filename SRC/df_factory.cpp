@@ -26,11 +26,24 @@ EXP DoublePowerLawParam parseDoublePowerLawParam(
 	par.coefJzIn  = kvmap.getDouble("coefJzIn",  par.coefJzIn);
 	par.coefJrOut = kvmap.getDouble("coefJrOut", par.coefJrOut);
 	par.coefJzOut = kvmap.getDouble("coefJzOut", par.coefJzOut);
+	par.coefJrLIn  = kvmap.getDouble("coefJrLIn",  par.coefJrLIn);
+	par.coefJzLIn  = kvmap.getDouble("coefJzLIn",  par.coefJzLIn);
+	par.coefJrLOut = kvmap.getDouble("coefJrLOut", par.coefJrLOut);
+	par.coefJzLOut = kvmap.getDouble("coefJzLOut", par.coefJzLOut);
 	par.rotFrac   = kvmap.getDouble("rotFrac",   par.rotFrac);
 	par.cutoffStrength = kvmap.getDouble("cutoffStrength", par.cutoffStrength);
 	par.Fname     = kvmap.getString("PopFile", par.Fname);
+	if(std::isnan(par.coefJrIn+par.coefJzIn+par.coefJrOut+par.coefJzOut)){
+		double ar=3*par.coefJrLIn/(2+par.coefJrLIn);
+		double aL=6/(1+par.coefJzLIn)/(2+par.coefJrLIn);
+		par.coefJrIn=ar; par.coefJzIn=aL*par.coefJzLIn;
+		ar=3*par.coefJrLOut/(2+par.coefJrLOut);
+		aL=6/(1+par.coefJzLOut)/(2+par.coefJrLOut);
+		par.coefJrOut=ar; par.coefJzOut=aL*par.coefJzLOut;
+	}
 	if(std::isnan(par.J0+par.epsilonJ+par.slopeIn+par.slopeOut))
 		printf("parseDoublePowerLawParam: vital parametr not set\n");
+	
 	return par;
 }
 

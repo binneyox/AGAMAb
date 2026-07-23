@@ -37,12 +37,18 @@ struct DoublePowerLawParam{
 			coefJzIn,  ///< contribution of vertical action to h(J), controlling anisotropy below J_0 (h_z)
 			coefJrOut, ///< contribution of radial   action to g(J), controlling anisotropy above J_0 (g_r)
 			coefJzOut, ///< contribution of vertical action to g(J), controlling anisotropy above J_0 (g_z)
+			coefJrLIn,  ///<   to h(J), controlling anisotropy below J_0 (h_r)
+			coefJzLIn,  ///<  to h(J), controlling anisotropy below J_0 (h_z)
+			coefJrLOut, ///<  to g(J), controlling anisotropy above J_0 (g_r)
+			coefJzLOut, ///<  to g(J), controlling anisotropy above J_0 (g_z)
 			rotFrac;   ///< relative amplitude of the odd-Jphi component (-1 to 1, 0 means no rotation)
 	std::string Fname;
 	DoublePowerLawParam() :  ///< set default values for all fields (NAN means that it must be set manually)
 	    norm(NAN), J0(NAN), Jcutoff(1e6), Jphi0(NAN), Jcore(0), epsilonJ(NAN), 
 	    slopeIn(NAN), slopeOut(NAN), steepness(1), cutoffStrength(2),
-	    coefJrIn(1.5), coefJzIn(1), coefJrOut(1.3), coefJzOut(1), rotFrac(0) {}
+	    coefJrIn(NAN), coefJzIn(NAN), coefJrOut(NAN), coefJzOut(NAN),
+	    coefJrLIn(NAN), coefJzLIn(NAN), coefJrLOut(NAN), coefJzLOut(NAN),
+	    rotFrac(0) {}
 };
 
 // Parameters of DSph DF introduced by Pascale+
@@ -125,7 +131,7 @@ struct NewOxfordParam{
 /// Creates anisotropic flattened double-powe-law systems
 class EXP NewDoublePowerLaw: public BaseDistributionFunction{
 	const double epsilonJ;
-	const double coefJrIn, coefJzIn;
+	double coefJrIn, coefJzIn;
 	const df::DoublePowerLaw DF0;
 	double wt(const actions::Actions& J) const;
 	public:
