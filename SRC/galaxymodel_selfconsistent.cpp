@@ -125,7 +125,6 @@ EXP void updateTotalPotential(SelfConsistentModel& model)
         if(pot)
             compPot.push_back(pot);
     }
-
     // the total density to be used in multipole expansion for spheroidal components
     PtrDensity totalDensitySph;
     // if more than one density component is present, create a temporary composite density object;
@@ -160,26 +159,12 @@ EXP void updateTotalPotential(SelfConsistentModel& model)
     if(compPot.size()==0)
 	    throw std::runtime_error("No potential is present in SelfConsistentModel");
     if(compPot.size()==1){
+//	    printf("calling wrapPotential\n");
 	    model.totalPotential = potential::wrapPotential(compPot[0]);
-//	    potential::BasePotential* ptl = new potential::Potential(&compPot[0]);
-//	    math::CubicSpline spl(actions::mapJcrit(*ptl));
-//	    ptl->setJzcrit(spl);
-//	    model.totalPotential = ptl;
     } else {
 	    potential::PtrPotential ptl(new potential::CompositeCyl(compPot));
 	    potential::PtrShellInterpolator PtrShellI(new potential::ShellInterpolator(*ptl,"ShInt.log"));
 	    potential::PtrPolarInterpolator PtrPolarI(new potential::PolarInterpolator(*ptl, PtrShellI,"ShInt.log"));
-
-//	    potential::PtrShellInterpolator PtrShellI(new potential::ShellInterpolator(*ptl));
-//	    potential::PtrPolarInterpolator PtrPolarI(new potential::PolarInterpolator(*ptl, PtrShellI));
-/*	    potential::CompositeCyl ptl(potential::CompositeCyl(compPot));
-	    potential::PtrShellInterpolator PtrShellI(new potential::ShellInterpolator(ptl);
-	    potential::PtrPolarInterpolator PtrPolarI(new
-	    potential::PolarInterpolator(ptl, PtrShellI);*/
-//	    printf("in updateTotalPotential calling mapJcrit\n");    
-//	    std::vector<double> cJcrit(potential::mapJcrit(*ptl));
-//	    printf("in updateTotalPotential calling setJzcrit\n");    
-//	    ptl->setJzcrit(cJcrit);
 	    model.totalPotential.reset(new potential::CompositeCyl(compPot, PtrShellI, PtrPolarI));
     }    
     // finally, create the action finder for the new potential

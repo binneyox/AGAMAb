@@ -178,8 +178,8 @@ const char* getCoefFileExtension(PotentialType type)
 EXP PtrPotential wrapPotential(const PtrPotential& pot){
 	std::vector<PtrPotential> components;
 	components.push_back(pot);
-	PtrShellInterpolator PtrShellI(new ShellInterpolator(*pot/*,"ShInt.log"*/));
-	PtrPolarInterpolator PtrPolarI(new PolarInterpolator(*pot, PtrShellI/*,"ShInt.log"*/));
+	PtrShellInterpolator PtrShellI(new ShellInterpolator(*pot,"ShInt.log"));
+	PtrPolarInterpolator PtrPolarI(new PolarInterpolator(*pot, PtrShellI,"ShInt.log"));
 	return PtrPotential(new CompositeCyl (components, PtrShellI, PtrPolarI));
 }
 

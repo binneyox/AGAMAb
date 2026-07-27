@@ -36,14 +36,16 @@ EXP double fitFocalDistanceShellOrbit(const std::vector<coord::PosVelCyl>& traj)
 		coefs(i, 1) = 1.;
 		rhs[i] = pow_2(traj[i].z);
 	}
+	// We want (R/b)^2+(z/a)^2=1 so result[1]+result[0](-R^2)=z^2 
+	// so result[0]=(a/b)^2 and result[1]=a^2
+	// -> FD^2=a^2-b^2=result[1]*(1-result[0])
 	//If 1>result[0]>1 an ellipse has been fitted, while
 	//a hyperbola is signalled by result[0]<0 
 	math::linearMultiFit(coefs, rhs, NULL, result);
-//	if(1/result[0]>=1)
-//		printf("error in fitFocalDistanceShellOrbit %g %g %g\n",
-//		       result[0],result[1],traj[0].R);
-	return result[0]>1? sqrt( fmax( result[1] * (1 - 1/result[0]), 0) ) :
-			sqrt(fabs(result[1]));
+	//printf("R(%g %g %g)",result[0]-1,result[1],result[1] * (1. - result[0]));
+	return sqrt(fmax(0,result[1] * (1 - result[0])));
+//	return result[0]>1? sqrt( fmax( result[1] * (1 - 1/result[0]), 0) ) :
+//			sqrt(fabs(result[1]));
 }
 
 // Class to find the largest FD that yields a centrifugal barrier even
@@ -475,6 +477,15 @@ void isMonotone(std::vector<double> x){
 			printf("isn't Monontone %g %g\n",x[i-1],x[i]);
 	}
 }
+void writeShell(int iE,double Rsh,double FD,std::vector<coord::PosVelCyl>& shell){
+	FILE* ofile;
+	char fname[50]; sprintf_s(fname,50,"shell_%d.dat",iE);
+	fopen_s(&ofile,fname,"w");
+	fprintf(ofile,"%zd %g %g\n",shell.size(),Rsh,FD);
+	for(int i=0;i<shell.size();i++)
+		fprintf(ofile,"%g %g\n",shell[i].R,shell[i].z);
+	fclose(ofile);
+}
 /* We integrate shell orbits on grid in E,Xi=Jphi/Jc(E) (energy and inclination)
  * For each of D,Rsh we produce 2 types of LinearInterpolator2d:
  * For actionFinder x,y are scaledE and scaledXi & Rsh/Rcirc is
@@ -539,6 +550,7 @@ EXP ShellInterpolator::ShellInterpolator(const BasePotential& pot,
 				double Rsh, FD0 = estimateFocalDistanceShellOrbit
 					(pot, E, Jphi, &Rsh, &Jz, &shell);
 				double FD = fmax(DELTAMIN*Rc, FD0);
+				//if(iXi==0) writeShell(iE,Rsh,FD0,shell);
 				grid2dDE(iE, iXi) = FD;
 				grid2dRE(iE, iXi) = Rsh / Rc;
 				double L = Jphi + Jz;
@@ -580,7 +592,7 @@ EXP ShellInterpolator::ShellInterpolator(const BasePotential& pot,
 	if(logfile){
 		fprintf(logfile,"%d\n",sizeE);
 		fprintf(logfile,"  E  Delta(E,0) Rsh(E,0) R(E,0)\n");      
-		for(int i=0; i<sizeE; i+=2) fprintf(logfile,"%g %g %g %g\n",
+		for(int i=0; i<sizeE; i++) fprintf(logfile,"%g %g %g %g\n",
 			gridE[i],grid2dDE(i,0),grid2dRE(i,0),gridR[i]);
 	}
 	//grid2dD contains D on regular grid in Xi but irregular
@@ -643,13 +655,22 @@ EXP PolarInterpolator::PolarInterpolator(const potential::BasePotential& pot,
 	math::ScalingSemiInf Sc;
 	std::vector<double> gridJr(sizeE), gridJz(sizeE), gridJfScaled(sizeE),
 	gridI3, gridFD, gridUmin;
-	if (potential::isSpherical(pot)|| std::isnan(Phi0) || std::isinf(Phi0)) {
+	//Chech if the potential is effectively spherical
+	bool Spherical = true;
+	if(!potential::isSpherical(pot) && !std::isnan(Phi0) && !std::isinf(Phi0))
+		for(int i=0; i< sizeE; i++){
+			double Rsh, FD, Rc = R_circ(pot, gridE[i]);
+			PtrShellI->getRshDelta(gridE[i], 0, 1/Phi0, Rsh, FD);
+			Spherical &= (FD <= 1.05*DELTAMIN*Rc);
+		}
+	if (Spherical || potential::isSpherical(pot) || std::isnan(Phi0) || std::isinf(Phi0)) {
 		double Jr0 = 0;
 		for (int i = 0; i < sizeE; i++) {
 			gridJr[i] = Jr0;
 			gridJz[i] = 0;
 			gridFD.push_back(0);
 			gridI3.push_back(0);//change this
+			gridUmin.push_back(0);
 			gridJfScaled[i]=scale(Sc,2*Jr0);
 			Jr0 += 1.;
 		}
